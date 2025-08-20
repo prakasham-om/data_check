@@ -1,21 +1,6 @@
 const { google } = require("googleapis");
 const { Buffer } = require("buffer");
 import creds from "../config/credentials.json" assert { type: "json" };
-// 🔑 Your Service Account JSON
-const creds = {
-  type: "service_account",
-  project_id: "bold-bond-469518-n4",
-  private_key_id: "233f3bd094b9c0c58b9f6be20d6d017c1ae225f6",
-  private_key: Buffer.from(process.env.GOOGLE_PRIVATE_KEY, "base64").toString(),
-  client_email: "sheet-service@bold-bond-469518-n4.iam.gserviceaccount.com",
-  client_id: "116636218015051192562",
-  auth_uri: "https://accounts.google.com/o/oauth2/auth",
-  token_uri: "https://oauth2.googleapis.com/token",
-  auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-  client_x509_cert_url:
-    "https://www.googleapis.com/robot/v1/metadata/x509/sheet-service%40bold-bond-469518-n4.iam.gserviceaccount.com",
-  universe_domain: "googleapis.com",
-};
 
 
 // ✅ Your Google Sheet ID
@@ -24,7 +9,8 @@ const MAX_ROWS_PER_SHEET = 50000;
 
 // Auth with direct JSON
 const auth = new google.auth.GoogleAuth({
-  credentials: creds,
+  email: creds.client_email,
+  key: creds.private_key,
   scopes: ["https://www.googleapis.com/auth/spreadsheets"],
 });
 
