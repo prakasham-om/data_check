@@ -1,6 +1,7 @@
 const { google } = require("googleapis");
 const { Buffer } = require("buffer");
-import creds from "../config/credentials.json" assert { type: "json" };
+const creds = require("../config/credentials.json");
+
 
 
 // ✅ Your Google Sheet ID
