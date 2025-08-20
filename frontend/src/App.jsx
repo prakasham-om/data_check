@@ -3,7 +3,7 @@ import axios from "axios";
 import CompanyForm from "./components/CompanyForm";
 import CompanyTable from "./components/CompanyTable";
 
-const API_BASE = "http://localhost:5000/api/company";
+const API_BASE = "https://data-check.onrender.com/api/company" || "http://localhost:5000/api/company";
 
 export default function App() {
   const [rows, setRows] = useState([]);
