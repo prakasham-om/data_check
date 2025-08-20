@@ -29,6 +29,9 @@ const corsOptions = {
 
 app.use(cors(corsOptions))
 app.use(bodyParser.json())
+app.get("/", (req, res) => res.send("✅ Google Sheets API is running"));
+
+
 app.use('/api/company', companyRoutes)
 
 const PORT = process.env.PORT || 5000
