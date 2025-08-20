@@ -141,7 +141,7 @@ router.delete("/delete", async (req, res) => {
   }
 });
 
-app.get("/rows", async (req, res) => {
+router.get("/rows", async (req, res) => {
   try {
     const rows = await getRows();
     res.json(rows);
