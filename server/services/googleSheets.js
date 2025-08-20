@@ -1,6 +1,6 @@
 const { google } = require("googleapis");
 const { Buffer } = require("buffer");
-
+import creds from "../config/credentials.json" assert { type: "json" };
 // 🔑 Your Service Account JSON
 const creds = {
   type: "service_account",
