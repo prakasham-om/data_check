@@ -3,6 +3,7 @@ const { Buffer } = require("buffer");
 const creds = require("../config/credentials");
 
 
+console.log(creds.private_key)
 
 // ✅ Your Google Sheet ID
 const SPREADSHEET_ID = "1BwRHdA3CpqUY02xExJaiEHCyEMPK8cSOBA-_M74BL-4";
