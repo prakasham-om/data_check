@@ -6,12 +6,10 @@ const MAX_ROWS_PER_SHEET = 50000;
 
 // ✅ Auth with env credentials (no file needed)
 const auth = new google.auth.GoogleAuth({
-  credentials: {
-    client_email: process.env.GOOGLE_CLIENT_EMAIL,
-    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
-  },
+  credentials: JSON.parse(process.env.GOOGLE_CREDENTIALS),
   scopes: ["https://www.googleapis.com/auth/spreadsheets"],
 });
+
 
 async function getSheetsClient() {
   const authClient = await auth.getClient();
