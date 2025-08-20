@@ -46,16 +46,40 @@ router.post("/add", async (req, res) => {
 // List companies
 router.get("/list", async (req, res) => {
   const { status, project, page = 1, limit = 10 } = req.query;
-  let data = await getRows();
 
-  if (status) data = data.filter((d) => d.status === status);
-  if (project) data = data.filter((d) => d.projectName === project);
+  try {
+    let rows = await getRows({ range: "Sheet1!A:Z" });
 
-  const total = data.length;
-  const start = (page - 1) * limit;
-  const end = start + Number(limit);
+    if (!rows || rows.length === 0) {
+      return res.status(200).json({ data: [], total: 0 });
+    }
 
-  res.json({ data: data.slice(start, end), total });
+    // first row = headers
+    const headers = rows[0];
+    const data = rows.slice(1).map(r => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = r[i] || ""; });
+      return obj;
+    });
+
+    // filtering
+    let filtered = data;
+    if (status) filtered = filtered.filter(d => d.status === status);
+    if (project) filtered = filtered.filter(d => d.projectName === project);
+
+    // pagination
+    const total = filtered.length;
+    const start = (page - 1) * limit;
+    const end = start + Number(limit);
+
+    res.status(200).json({
+      data: filtered.slice(start, end),
+      total
+    });
+  } catch (err) {
+    console.error("GET /list failed:", err);
+    res.status(500).json({ error: "Failed to fetch list", details: err.message });
+  }
 });
 
 // Search by company name
