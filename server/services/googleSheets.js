@@ -5,7 +5,7 @@ const creds = {
   type: "service_account",
   project_id: "bold-bond-469518-n4",
   private_key_id: "233f3bd094b9c0c58b9f6be20d6d017c1ae225f6",
-  private_key:  private_key: Buffer.from(process.env.GOOGLE_PRIVATE_KEY, "base64").toString(),
+  private_key: Buffer.from(process.env.GOOGLE_PRIVATE_KEY, "base64").toString(),
   client_email: "sheet-service@bold-bond-469518-n4.iam.gserviceaccount.com",
   client_id: "116636218015051192562",
   auth_uri: "https://accounts.google.com/o/oauth2/auth",
