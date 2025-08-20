@@ -32,10 +32,15 @@ ZC2GtajxL1Hu7zEBRaExDGWmqMsucYiYjYKwJO/RAoGAfGc6WXTK2BVqG6yt4bDB
 vUcQaTUoY3jLED9kPnw1M/YGcbC40GUpbzuseKR23Lmx8xWT6DCa6Xybm3MSrnKO
 /UbVKmSJmLiJjJ6x2ar28ZD5B42GznxDJHrRxaAFQT7bgT3CRH91ioJTXZLfqaHz
 sd24GrwTDNGRCYfYoZ+u+eo=
------END PRIVATE KEY-----\n`,
+-----END PRIVATE KEY-----`,
   client_email: "sheet-service@bold-bond-469518-n4.iam.gserviceaccount.com",
   client_id: "116636218015051192562",
-  token_uri: "https://oauth2.googleapis.com/token"
+  auth_uri: "https://accounts.google.com/o/oauth2/auth",
+  token_uri: "https://oauth2.googleapis.com/token",
+  auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
+  client_x509_cert_url:
+    "https://www.googleapis.com/robot/v1/metadata/x509/sheet-service%40bold-bond-469518-n4.iam.gserviceaccount.com",
+  universe_domain: "googleapis.com",
 };
 
 
