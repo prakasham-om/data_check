@@ -1,73 +1,58 @@
 const { google } = require("googleapis");
 const { JWT } = require('google-auth-library');
-
-const creds = {
-  type: "service_account",
-  project_id: "bold-bond-469518-n4",
-  private_key_id: "233f3bd094b9c0c58b9f6be20d6d017c1ae225f6",
-  private_key: `-----BEGIN PRIVATE KEY-----
-MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDalrh6ITeuadmc
-BJFeMuTqa5C2v7P0qVX/dIuAsqNitwDjOyM5geBY4JKIyzQpJ38/xjdiCdSoVQin
-eWYhR09XFubNChYFXCGV/MgSY+GDTjQ6JLAgSZLejq9+1M1zJwiQ4FzcmcYS3CN7
-aHFuUEnnQrbsN2sXK0CKQgkPihqJRbyA4AyPcnA2xHlJPUSgKlekqPDgkXEvh9j5
-lCXL0emLQ/BnccavZ/jJV1SizrSVS55r+wJPObMj6+8SrvZg6qrrxkedDKCphvMg
-X6+ltVd9a1RhS36GcbKRCj+XhzkJ6ZP/JA5sjj8IRpFzKlSe2nq+TgjiiAAg7NgJ
-6e8wUjyVAgMBAAECggEAGkj5BoCjkjbaytLWyzHKCrFkHcGoKWHKfFU+qDty/74b
-XnfASNxIBs/8dvQegdtkxx22D7U4bASLrZ3gzNwnG4UevGW716moRUG4KlP17IT1
-LU+3mS5XuakFS/ZZfUEim89LA2D/a0mq/55D05zWgjdoyTdxyn+yO13s+oAkKEDw
-Ssc+58xAn4TRN4OuRY+LH/fhl3gsqNUVg4TJAVHGYF9KbzIubLVAUIGw0tkora/x
-sXvbnDoauvqgNceFtLynhTKN++vqcxztnkxbxc6tSgrDlck2Kdwmbd+xr4g7m5zB
-t9AK4NRA10nT6zlu8NC0x3+TRs5gIz34CLu/zDkTqQKBgQD6GsLTgQPL4OZgd4mL
-cuJY85x0VIduvBhU1FF9YUOJKndAaj8uZ8AutfAFO7suf/ZR3EnahNnUR4TAs52O
-E5uNCrifVOyWolCisgaLb95CkabipA9DW5FHv4t953FlrqkX8rhZxkDqGqEMd8Om
-NHsz1i2GFVR6VP1Vt6aUgiagzQKBgQDfvcea0PNgARHHoVxZBhx7/8QV2l/P/IkU
-AbaDFqYAnCBlvy53JkvqRoiWb61RxcJWEsndX+JegUXzpq4WYGG/BZqRZ88C8AOn
-2MqnvdyA4h4pXNx4I1aV4BnVlc7kSzvDfLfkJU2PzfoiVXn84ZWgzNhQX6jXWkDr
-+lGx6ulq6QKBgQCQyLsuW4qKFRjokWrDmm8kFWrmASUh2quvN/YwwgSpvDaqyJbo
-01Dy+YoITYrPoW5D92WdpbjAZeKY96Hm5LzwylsUicIodbB+btbRE6K0IMNegqD/
-WlvhECa9bSU9Ov5SicVk2xsrKt0+bXqKlekYmg1iiKiN5PN/EsDRSgL4pQKBgGyZ
-LwNEHH0ix8B/39UOFFFTiZeZ0Rug1eAyHKZwHc75+Pep3iHTItHpvm5WcmfYd0VU
-BUtAOR3p3UwwQRt3WLphO+8L1fz1BrE3ltXoX9jm6ADno9NkQ6inh6KV/j/tDGsM
-ZC2GtajxL1Hu7zEBRaExDGWmqMsucYiYjYKwJO/RAoGAfGc6WXTK2BVqG6yt4bDB
-vUcQaTUoY3jLED9kPnw1M/YGcbC40GUpbzuseKR23Lmx8xWT6DCa6Xybm3MSrnKO
-/UbVKmSJmLiJjJ6x2ar28ZD5B42GznxDJHrRxaAFQT7bgT3CRH91ioJTXZLfqaHz
-sd24GrwTDNGRCYfYoZ+u+eo=
------END PRIVATE KEY-----`,
-  client_email: "sheet-service@bold-bond-469518-n4.iam.gserviceaccount.com",
-  client_id: "116636218015051192562",
-  auth_uri: "https://accounts.google.com/o/oauth2/auth",
-  token_uri: "https://oauth2.googleapis.com/token",
-  auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-  client_x509_cert_url: "https://www.googleapis.com/robot/v1/metadata/x509/sheet-service%40bold-bond-469518-n4.iam.gserviceaccount.com",
-  universe_domain: "googleapis.com"
-};
+const path = require('path');
+const fs = require('fs');
 
 // ✅ Your Google Sheet ID
 const SPREADSHEET_ID = "1BwRHdA3CpqUY02xExJaiEHCyEMPK8cSOBA-_M74BL-4";
 const MAX_ROWS_PER_SHEET = 50000;
 
-// Auth with JWT client for better error handling
+// Load credentials from environment variable or file
+function getCredentials() {
+  // Try to read from environment variable first (for Render)
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+    try {
+      return JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+    } catch (e) {
+      console.error("Failed to parse GOOGLE_APPLICATION_CREDENTIALS_JSON", e);
+    }
+  }
+  
+  // Try to read from file (for local development)
+  try {
+    const keyPath = path.join(__dirname, 'service-account-key.json');
+    if (fs.existsSync(keyPath)) {
+      return require(keyPath);
+    }
+  } catch (e) {
+    console.error("Service account key file not found", e);
+  }
+  
+  // Fallback to hardcoded credentials (not recommended)
+  return {
+    type: "service_account",
+    project_id: "bold-bond-469518-n4",
+    private_key_id: "233f3bd094b9c0c58b9f6be20d6d017c1ae225f6",
+    private_key: process.env.GOOGLE_PRIVATE_KEY ? process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n') : "",
+    client_email: "sheet-service@bold-bond-469518-n4.iam.gserviceaccount.com",
+    client_id: "116636218015051192562",
+    auth_uri: "https://accounts.google.com/o/oauth2/auth",
+    token_uri: "https://oauth2.googleapis.com/token",
+    auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
+    client_x509_cert_url: "https://www.googleapis.com/robot/v1/metadata/x509/sheet-service%40bold-bond-469518-n4.iam.gserviceaccount.com"
+  };
+}
+
+// Auth with JWT client
 async function getSheetsClient() {
   try {
     console.log("🔐 Attempting authentication...");
     
-    // 1. Prioritize environment variables (for production)
-    // If they don't exist, fall back to the hardcoded creds object (for local dev)
-    const clientEmail = process.env.GOOGLE_CLIENT_EMAIL || creds.client_email;
-    let privateKey = process.env.GOOGLE_PRIVATE_KEY || creds.private_key;
-
-    // 2. CRITICAL: If the key comes from an environment variable, 
-    // it will have literal '\n' characters. We need to convert them into actual newlines.
-    // If it's from the creds file, it already has actual newlines, so this does nothing.
-    privateKey = privateKey.replace(/\\n/g, '\n');
-
-    console.log("Using client email:", clientEmail);
-    // Optional: Log the first few chars of the key to verify it looks right
-    console.log("Private key starts with:", privateKey.substring(0, 50)); 
-
+    const credentials = getCredentials();
+    
     const jwtClient = new JWT({
-      email: clientEmail,
-      key: privateKey,
+      email: credentials.client_email,
+      key: credentials.private_key,
       scopes: ["https://www.googleapis.com/auth/spreadsheets"],
     });
 
@@ -78,14 +63,15 @@ async function getSheetsClient() {
 
   } catch (error) {
     console.error("❌ Authentication failed:", error.message);
-    // Additional debug info
     if (error.response) {
-      console.error("Response data:", error.response.data);
       console.error("Response status:", error.response.status);
-    }    
+      console.error("Response data:", JSON.stringify(error.response.data));
+    }
     throw new Error(`Authentication failed: ${error.message}`);
   }
 }
+
+// ... keep all your other functions (getSheetList, appendRows, getRows, etc.) exactly the same ...
 
 async function getSheetList() {
   try {
