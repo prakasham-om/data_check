@@ -141,7 +141,18 @@ router.delete("/delete", async (req, res) => {
   }
 });
 
-
+app.get("/rows", async (req, res) => {
+  try {
+    const rows = await getRows();
+    res.json(rows);
+  } catch (err) {
+    console.error("Google Sheets API Error:", err.response?.data || err.message);
+    res.status(500).json({
+      error: err.message,
+      details: err.response?.data || null
+    });
+  }
+});
 
 
 module.exports = router;
