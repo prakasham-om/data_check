@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import industryLocations from "../data";
 
-const API_BASE = " https://data-check.onrender.com/api/company" || "http://localhost:5000/api/company"  ;
+const API_BASE = " https://data-check.onrender.com/api/company"   ;
 
 export default function CompanyForm({ onAdd }) {
   const [companyName, setCompanyName] = useState("");
