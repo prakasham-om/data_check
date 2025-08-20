@@ -9,10 +9,6 @@ const cred=require('../config/credentials.json');
 const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
 const MAX_ROWS_PER_SHEET = 50000;
 
-console.log(process.env.GOOGLE_KEY)
-
-console.log(keyPath)
-
 const auth = new google.auth.GoogleAuth({
   credentials: cred,
 
