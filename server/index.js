@@ -9,7 +9,7 @@ const app = express()
 
 // Array of allowed URLs
 const allowedOrigins = [
-  'https://data-check.onrender.com',
+  'https://data-check-dusky.vercel.app',
   'http://localhost:5173',
   'https://your-other-frontend.com'
 ]
