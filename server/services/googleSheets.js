@@ -87,25 +87,6 @@ async function getSheetsClient() {
   }
 }
 
-    // Authorize and get access token
-    await jwtClient.authorize();
-    console.log("✅ Authentication successful");
-    
-    return google.sheets({ version: "v4", auth: jwtClient });
-
-  } catch (error) {
-    console.error("❌ Authentication failed:", error.message);
-    
-    // Additional debug info
-    if (error.response) {
-      console.error("Response data:", error.response.data);
-      console.error("Response status:", error.response.status);
-    }
-    
-    throw new Error(`Authentication failed: ${error.message}`);
-  }
-}
-
 async function getSheetList() {
   try {
     const sheets = await getSheetsClient();
@@ -438,13 +419,15 @@ module.exports = {
   testConnection 
 };
 
-// Run test if this file is executed directly
-// if (require.main === module) {
-//   testConnection().then(result => {
-//     if (result.success) {
-//       console.log("🚀 Google Sheets API is ready to use!");
-//     } else {
-//       console.log("💥 Setup failed. Please check your credentials.");
-//     }
-//   });
-// }
+// Fixed: Wrap the test call in an async IIFE (Immediately Invoked Function Expression)
+// This ensures 'await' is used properly
+if (require.main === module) {
+  (async () => {
+    const result = await testConnection();
+    if (result.success) {
+      console.log("🚀 Google Sheets API is ready to use!");
+    } else {
+      console.log("💥 Setup failed. Please check your credentials.");
+    }
+  })();
+}
