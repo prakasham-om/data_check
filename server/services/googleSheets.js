@@ -4,7 +4,7 @@ require("dotenv").config();
 const path = require("path");
 const keyPath = path.join(__dirname, "../config/credentials.json");
 
-const cred=require('../config/credentials.json');
+const cred=process.env.GOOGLE_CRED;
 
 const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
 const MAX_ROWS_PER_SHEET = 50000;
