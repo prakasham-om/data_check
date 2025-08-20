@@ -1,12 +1,15 @@
 const { google } = require("googleapis");
-const path = require("path");
 require("dotenv").config();
 
 const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
 const MAX_ROWS_PER_SHEET = 50000;
 
+// ✅ Auth with env credentials (no file needed)
 const auth = new google.auth.GoogleAuth({
-  keyFile: path.join(__dirname, "../config/credentials.json"),
+  credentials: {
+    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+  },
   scopes: ["https://www.googleapis.com/auth/spreadsheets"],
 });
 
