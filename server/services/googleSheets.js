@@ -10,8 +10,10 @@ const MAX_ROWS_PER_SHEET = 50000;
 
 // Auth with direct JSON
 const auth = new google.auth.GoogleAuth({
-  email: creds.client_email,
-  key: creds.private_key,
+     credentials: {
+      client_email: creds.client_email,
+      private_key: creds.private_key.replace(/\\n/g, '\n'), 
+    },
   scopes: ["https://www.googleapis.com/auth/spreadsheets"],
 });
 
