@@ -51,12 +51,41 @@ async function getSheetsClient() {
   try {
     console.log("🔐 Attempting authentication...");
     
-    // Method 1: Using JWT client directly
+    // 1. Prioritize environment variables (for production)
+    // If they don't exist, fall back to the hardcoded creds object (for local dev)
+    const clientEmail = process.env.GOOGLE_CLIENT_EMAIL || creds.client_email;
+    let privateKey = process.env.GOOGLE_PRIVATE_KEY || creds.private_key;
+
+    // 2. CRITICAL: If the key comes from an environment variable, 
+    // it will have literal '\n' characters. We need to convert them into actual newlines.
+    // If it's from the creds file, it already has actual newlines, so this does nothing.
+    privateKey = privateKey.replace(/\\n/g, '\n');
+
+    console.log("Using client email:", clientEmail);
+    // Optional: Log the first few chars of the key to verify it looks right
+    console.log("Private key starts with:", privateKey.substring(0, 50)); 
+
     const jwtClient = new JWT({
-      email: creds.client_email,
-      key: creds.private_key.replace(/\\n/g, '\n'),
+      email: clientEmail,
+      key: privateKey,
       scopes: ["https://www.googleapis.com/auth/spreadsheets"],
     });
+
+    await jwtClient.authorize();
+    console.log("✅ Authentication successful");
+    
+    return google.sheets({ version: "v4", auth: jwtClient });
+
+  } catch (error) {
+    console.error("❌ Authentication failed:", error.message);
+    // Additional debug info
+    if (error.response) {
+      console.error("Response data:", error.response.data);
+      console.error("Response status:", error.response.status);
+    }    
+    throw new Error(`Authentication failed: ${error.message}`);
+  }
+}
 
     // Authorize and get access token
     await jwtClient.authorize();
