@@ -5,7 +5,7 @@ const creds = {
   type: "service_account",
   project_id: "bold-bond-469518-n4",
   private_key_id: "233f3bd094b9c0c58b9f6be20d6d017c1ae225f6",
-  private_key: `-----BEGIN PRIVATE KEY-----
+  private_key: "-----BEGIN PRIVATE KEY-----
 MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDalrh6ITeuadmc
 BJFeMuTqa5C2v7P0qVX/dIuAsqNitwDjOyM5geBY4JKIyzQpJ38/xjdiCdSoVQin
 eWYhR09XFubNChYFXCGV/MgSY+GDTjQ6JLAgSZLejq9+1M1zJwiQ4FzcmcYS3CN7
@@ -32,15 +32,12 @@ ZC2GtajxL1Hu7zEBRaExDGWmqMsucYiYjYKwJO/RAoGAfGc6WXTK2BVqG6yt4bDB
 vUcQaTUoY3jLED9kPnw1M/YGcbC40GUpbzuseKR23Lmx8xWT6DCa6Xybm3MSrnKO
 /UbVKmSJmLiJjJ6x2ar28ZD5B42GznxDJHrRxaAFQT7bgT3CRH91ioJTXZLfqaHz
 sd24GrwTDNGRCYfYoZ+u+eo=
------END PRIVATE KEY-----\n`,
+-----END PRIVATE KEY-----\n",
   client_email: "sheet-service@bold-bond-469518-n4.iam.gserviceaccount.com",
   client_id: "116636218015051192562",
-  auth_uri: "https://accounts.google.com/o/oauth2/auth",
-  token_uri: "https://oauth2.googleapis.com/token",
-  auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-  client_x509_cert_url: "https://www.googleapis.com/robot/v1/metadata/x509/sheet-service%40bold-bond-469518-n4.iam.gserviceaccount.com",
-  universe_domain: "googleapis.com"
+  token_uri: "https://oauth2.googleapis.com/token"
 };
+
 
 // ✅ Your Google Sheet ID
 const SPREADSHEET_ID = "1BwRHdA3CpqUY02xExJaiEHCyEMPK8cSOBA-_M74BL-4";
