@@ -1,6 +1,6 @@
 const { google } = require("googleapis");
 const { Buffer } = require("buffer");
-const creds = require("../config/credentials.json");
+const creds = require("../config/credentials.js");
 
 
 
