@@ -1,182 +1,197 @@
 const express = require("express");
 const router = express.Router();
-const { appendRows, getRows, updateRow,deleteRow,clearSheet } = require("../services/googleSheets"); // <-- added updateRow
+const { BigQuery } = require("@google-cloud/bigquery");
+require("dotenv").config();
 
-// Helper: get current IST date as YYYY-MM-DD
+// Initialize BigQuery client
+const bigquery = new BigQuery({
+  projectId: "bold-bond-469518-n4", 
+  credentials:{ 
+    client_email: process.env.PRIVATE_EMAIL,
+    private_key: process.env.PRIVATE_KEY.replace(/\\n/g, "\n"),
+  }
+});
+
+const datasetId = "my_dataset";
+const tableId = "company_data";
+
+// Initialize dataset + table
+async function initTable() {
+  const [datasets] = await bigquery.getDatasets();
+  if (!datasets.find(d => d.id === datasetId)) {
+    await bigquery.createDataset(datasetId);
+    console.log(`Dataset ${datasetId} created`);
+  }
+
+  const dataset = bigquery.dataset(datasetId);
+  const [tables] = await dataset.getTables();
+  if (!tables.find(t => t.id === tableId)) {
+    await dataset.createTable(tableId, {
+      schema: [
+        { name: "companyName", type: "STRING" },
+        { name: "projectName", type: "STRING" },
+        { name: "status", type: "STRING" },
+        { name: "empId", type: "STRING" },
+        { name: "createdAt", type: "TIMESTAMP" },
+      ],
+    });
+    console.log(`Table ${tableId} created`);
+  }
+}
+initTable();
+
+// Helper: current IST date
 function getISTDate() {
   const date = new Date();
-  const istOffset = 5.5 * 60 * 60 * 1000; // 5 hours 30 mins in ms
-  const istDate = new Date(date.getTime() + istOffset);
-
-  const yyyy = istDate.getUTCFullYear();
-  const mm = String(istDate.getUTCMonth() + 1).padStart(2, "0");
-  const dd = String(istDate.getUTCDate()).padStart(2, "0");
-
-  return `${yyyy}-${mm}-${dd}`;
+  const istOffset = 5.5 * 60 * 60 * 1000; // 5:30
+  return new Date(date.getTime() + istOffset).toISOString();
 }
 
-// Add new company + project
+// ✅ Add new company + project
 router.post("/add", async (req, res) => {
   try {
     const { companyName, projectName, status, empId } = req.body;
-    if (!companyName)
-      return res.status(400).json({ error: "Missing fields" });
+    if (!companyName || !projectName) return res.status(400).json({ error: "Missing fields" });
 
-    const existing = await getRows();
-    if (
-      existing.some(
-        (c) =>
-          c.companyName.toLowerCase() === companyName.toLowerCase() &&
-          c.projectName.toLowerCase() === projectName.toLowerCase()
-      )
-    ) {
-      return res.status(409).json({ error: "Company+Project already exists" });
-    }
+    const query = `
+      MERGE \`${credentials.project_id}.${datasetId}.${tableId}\` T
+      USING (SELECT @companyName AS companyName, @projectName AS projectName, @status AS status, @empId AS empId, @createdAt AS createdAt) S
+      ON T.companyName = S.companyName AND T.projectName = S.projectName
+      WHEN NOT MATCHED THEN
+      INSERT (companyName, projectName, status, empId, createdAt)
+      VALUES (S.companyName, S.projectName, S.status, S.empId, S.createdAt)
+    `;
+    const options = {
+      query,
+      params: {
+        companyName,
+        projectName,
+        status: status || "active",
+        empId: empId || "",
+        createdAt: getISTDate(),
+      },
+    };
 
-    const createdAt = getISTDate();
-    await appendRows([[companyName, projectName, status, empId, createdAt]]);
-
-    res.json({ success: true });
+    await bigquery.query(options);
+    res.json({ success: true, message: "Inserted (or already exists)" });
   } catch (err) {
-    console.error(err);
+    console.error("POST /add error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
 
-// List companies
+// ✅ List companies
 router.get("/list", async (req, res) => {
-  const { status, project, page = 1, limit = 10 } = req.query;
-
   try {
-    let rows = await getRows({ range: "Sheet1!A:Z" });
+    const { status, project, page = 1, limit = 10 } = req.query;
 
-    if (!rows || rows.length === 0) {
-      return res.status(200).json({ data: [], total: 0 });
+    let query = `SELECT * FROM \`${credentials.project_id}.${datasetId}.${tableId}\``;
+    const conditions = [];
+    const params = {};
+
+    if (status) {
+      conditions.push("status = @status");
+      params.status = status;
     }
+    if (project) {
+      conditions.push("projectName = @project");
+      params.project = project;
+    }
+    if (conditions.length > 0) query += " WHERE " + conditions.join(" AND ");
+    query += " ORDER BY createdAt DESC";
+    query += ` LIMIT @limit OFFSET @offset`;
+    params.limit = Number(limit);
+    params.offset = (Number(page) - 1) * Number(limit);
 
-    // first row = headers
-    const headers = rows[0];
-    const data = rows.slice(1).map(r => {
-      const obj = {};
-      headers.forEach((h, i) => { obj[h] = r[i] || ""; });
-      return obj;
-    });
-
-    // filtering
-    let filtered = data;
-    if (status) filtered = filtered.filter(d => d.status === status);
-    if (project) filtered = filtered.filter(d => d.projectName === project);
-
-    // pagination
-    const total = filtered.length;
-    const start = (page - 1) * limit;
-    const end = start + Number(limit);
-
-    res.status(200).json({
-      data: filtered.slice(start, end),
-      total
-    });
+    const [rows] = await bigquery.query({ query, params });
+    res.json({ data: rows, total: rows.length });
   } catch (err) {
-    console.error("GET /list failed:", err);
-    res.status(500).json({ error: "Failed to fetch list", details: err.message });
+    console.error("GET /list error:", err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
-// Search by company name
+// ✅ Search company (prefix)
 router.get("/search", async (req, res) => {
-  const { q } = req.query;
-  if (!q) return res.json([]);
-  const data = await getRows();
-  const result = data.filter((d) =>
-    d.companyName.toLowerCase().startsWith(q.toLowerCase())
-  );
-  res.json(result.slice(0, 10));
+  try {
+    const { q } = req.query;
+    if (!q) return res.json([]);
+
+    const query = `
+      SELECT * FROM \`${credentials.project_id}.${datasetId}.${tableId}\`
+      WHERE LOWER(companyName) LIKE @prefix
+      LIMIT 10
+    `;
+    const [rows] = await bigquery.query({ query, params: { prefix: q.toLowerCase() + "%" } });
+    res.json(rows);
+  } catch (err) {
+    console.error("GET /search error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
-// Toggle active/inactive status
+// ✅ Toggle active → inactive
 router.post("/toggle/:companyName", async (req, res) => {
   try {
     const { companyName } = req.params;
+    const { projectName } = req.body;
+
     if (!companyName) return res.status(400).json({ error: "Missing companyName" });
 
-    const rows = await getRows();
-    const row = rows.find((r) => r.companyName.toLowerCase() === companyName.toLowerCase());
+    const querySelect = `
+      SELECT status FROM \`${credentials.project_id}.${datasetId}.${tableId}\`
+      WHERE companyName=@companyName ${projectName ? "AND projectName=@projectName" : ""}
+      LIMIT 1
+    `;
+    const [rows] = await bigquery.query({ query: querySelect, params: { companyName, projectName } });
+    if (!rows.length) return res.status(404).json({ error: "Company not found" });
 
-    if (!row) return res.status(404).json({ error: "Company not found" });
+    if (rows[0].status === "inactive") return res.status(409).json({ error: "Already inactive" });
 
-    if (row.status === "inactive") {
-      // Cannot toggle inactive rows
-      return res.status(409).json({ error: "Row is already inactive, cannot toggle" });
-    }
-
-    // Only active → inactive
-    const updatedValues = [
-      row.companyName,
-      row.projectName,
-      "inactive",
-      row.empId,
-      row.createdAt,
-    ];
-
-    await updateRow(row.id, updatedValues);
+    const queryUpdate = `
+      UPDATE \`${credentials.project_id}.${datasetId}.${tableId}\`
+      SET status='inactive'
+      WHERE companyName=@companyName ${projectName ? "AND projectName=@projectName" : ""}
+    `;
+    await bigquery.query({ query: queryUpdate, params: { companyName, projectName } });
     res.json({ success: true, message: "Status changed to inactive" });
   } catch (err) {
-    console.error(err);
+    console.error("POST /toggle error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
 
-
-router.post("/clear/:sheetName", async (req, res) => {
+// ✅ Clear entire table
+router.post("/clear", async (req, res) => {
   try {
-    const sheetName = req.params.sheetName?.trim();
-    if (!sheetName) return res.status(400).json({ error: "Missing sheetName" });
-
-    await clearSheet(sheetName);
-    res.json({ success: true, message: `Sheet ${sheetName} cleared` });
+    const query = `TRUNCATE TABLE \`${credentials.project_id}.${datasetId}.${tableId}\``;
+    await bigquery.query(query);
+    res.json({ success: true, message: "Table cleared" });
   } catch (err) {
-    console.error(err);
+    console.error("POST /clear error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
 
-
-
-
+// ✅ Delete company
 router.delete("/delete", async (req, res) => {
   try {
-    const { companyName } = req.body;
-    if (!companyName) return res.status(400).json({ error: "Missing company name" });
+    const { companyName, projectName } = req.body;
+    if (!companyName) return res.status(400).json({ error: "Missing companyName" });
 
-    // Get all rows
-    const rows = await getRows();
+    let query = `DELETE FROM \`${credentials.project_id}.${datasetId}.${tableId}\` WHERE companyName=@companyName`;
+    const params = { companyName };
+    if (projectName) {
+      query += " AND projectName=@projectName";
+      params.projectName = projectName;
+    }
 
-    // Find the row by company name
-    const rowToDelete = rows.find(r => r.companyName === companyName);
-    if (!rowToDelete) return res.status(404).json({ error: "Company not found" });
-
-    // Delete the row
-    await deleteRow({ sheetName: rowToDelete.sheetName, rowId: rowToDelete.rowId });
-
-    return res.json({ success: true, message: `"${companyName}" deleted successfully` });
+    await bigquery.query({ query, params });
+    res.json({ success: true, message: `"${companyName}" deleted` });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Failed to delete company" });
+    console.error("DELETE /delete error:", err);
+    res.status(500).json({ error: "Server error" });
   }
 });
-
-router.get("/rows", async (req, res) => {
-  try {
-    const rows = await getRows();
-    res.json(rows);
-  } catch (err) {
-    console.error("Google Sheets API Error:", err.response?.data || err.message);
-    res.status(500).json({
-      error: err.message,
-      details: err.response?.data || null
-    });
-  }
-});
-
 
 module.exports = router;
