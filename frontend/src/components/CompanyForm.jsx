@@ -55,7 +55,7 @@ export default function CompanyForm({ onAdd }) {
 
     setLoading(true);
     try {
-      await axios.post(`${API_BASE}/create`, {
+      await axios.post(`${API_BASE}/creat`, {
         companyName: trimmedCompany,
         projectName: trimmedProject || null, // allow empty project
         status,
