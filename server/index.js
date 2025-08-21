@@ -11,7 +11,7 @@ const app = express()
 const allowedOrigins = [
   'https://data-check-dusky.vercel.app',
   'http://localhost:5173',
-  'https://your-other-frontend.com'
+  'https://data-check-7zb4yybct-rohis-projects-40be3d9d.vercel.app'
 ]
 
 const corsOptions = {
