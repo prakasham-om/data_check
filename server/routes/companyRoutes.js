@@ -4,9 +4,10 @@ const { BigQuery } = require("@google-cloud/bigquery");
 require("dotenv").config();
 
 // Initialize BigQuery client
+const projectId = "bold-bond-469518-n4";
 const bigquery = new BigQuery({
-  projectId: "bold-bond-469518-n4", 
-  credentials:{ 
+  projectId: projectId,
+  credentials: {
     client_email: process.env.PRIVATE_EMAIL,
     private_key: process.env.PRIVATE_KEY.replace(/\\n/g, "\n"),
   }
@@ -85,7 +86,7 @@ router.get("/list", async (req, res) => {
   try {
     const { status, project, page = 1, limit = 10 } = req.query;
 
-    let query = `SELECT * FROM \`${credentials.project_id}.${datasetId}.${tableId}\``;
+    let query = `SELECT * FROM \`${projectId}.${datasetId}.${tableId}\``;
     const conditions = [];
     const params = {};
 
