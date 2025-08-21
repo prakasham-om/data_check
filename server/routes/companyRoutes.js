@@ -77,7 +77,7 @@ router.post("/add", async (req, res) => {
     res.json({ success: true, message: "Inserted (or already exists)" });
   } catch (err) {
     console.error("POST /add error:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: "Server error" ,message:err});
   }
 });
 
