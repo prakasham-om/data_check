@@ -51,7 +51,7 @@ function getISTDate() {
 }
 
 // ✅ Add new company
-router.post("/add", async (req, res) => {
+router.post("/creat", async (req, res) => {
   try {
     const { companyName, projectName, status, empId } = req.body;
     if (!companyName || !projectName) return res.status(400).json({ error: "Missing fields" });
