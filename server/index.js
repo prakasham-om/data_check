@@ -8,26 +8,16 @@ const companyRoutes = require('./routes/companyRoutes')
 const app = express()
 
 // Array of allowed URLs
-const allowedOrigins = [
-  'https://data-check-dusky.vercel.app',
-  'http://localhost:5173',
-  'https://data-check-7zb4yybct-rohis-projects-40be3d9d.vercel.app'
-]
 
-const corsOptions = {
-  origin: function (origin, callback) {
-    // allow requests with no origin (like Postman)
-    if (!origin) return callback(null, true)
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`
-      return callback(new Error(msg), false)
-    }
-    return callback(null, true)
-  },
-  credentials: true, // if you need to send cookies
-}
+app.use(
+  cors({
+    origin: ["https://data-check-qh8f.vercel.app"], // your frontend domain
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 
-app.use(cors(corsOptions))
+
 app.use(bodyParser.json())
 app.get("/", (req, res) => res.send("✅ Google Sheets API is running"));
 
