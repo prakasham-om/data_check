@@ -3,20 +3,22 @@ const router = express.Router();
 const { BigQuery } = require("@google-cloud/bigquery");
 require("dotenv").config();
 
-// Initialize BigQuery client
+// ✅ Set projectId here
 const projectId = "bold-bond-469518-n4";
+
+// ✅ BigQuery Client
 const bigquery = new BigQuery({
-  projectId: projectId,
+  projectId,
   credentials: {
     client_email: process.env.PRIVATE_EMAIL,
     private_key: process.env.PRIVATE_KEY.replace(/\\n/g, "\n"),
-  }
+  },
 });
 
 const datasetId = "my_dataset";
 const tableId = "company_data";
 
-// Initialize dataset + table
+// ✅ Create dataset + table if not exists
 async function initTable() {
   const [datasets] = await bigquery.getDatasets();
   if (!datasets.find(d => d.id === datasetId)) {
@@ -41,21 +43,21 @@ async function initTable() {
 }
 initTable();
 
-// Helper: current IST date
+// ✅ Helper IST timestamp
 function getISTDate() {
   const date = new Date();
-  const istOffset = 5.5 * 60 * 60 * 1000; // 5:30
+  const istOffset = 5.5 * 60 * 60 * 1000;
   return new Date(date.getTime() + istOffset).toISOString();
 }
 
-// ✅ Add new company + project
+// ✅ Add new company
 router.post("/add", async (req, res) => {
   try {
     const { companyName, projectName, status, empId } = req.body;
     if (!companyName || !projectName) return res.status(400).json({ error: "Missing fields" });
 
     const query = `
-      MERGE \`${credentials.project_id}.${datasetId}.${tableId}\` T
+      MERGE \`${projectId}.${datasetId}.${tableId}\` T
       USING (SELECT @companyName AS companyName, @projectName AS projectName, @status AS status, @empId AS empId, @createdAt AS createdAt) S
       ON T.companyName = S.companyName AND T.projectName = S.projectName
       WHEN NOT MATCHED THEN
@@ -77,7 +79,7 @@ router.post("/add", async (req, res) => {
     res.json({ success: true, message: "Inserted (or already exists)" });
   } catch (err) {
     console.error("POST /add error:", err);
-    res.status(500).json({ error: err ,message:err});
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -108,18 +110,18 @@ router.get("/list", async (req, res) => {
     res.json({ data: rows, total: rows.length });
   } catch (err) {
     console.error("GET /list error:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: err.message });
   }
 });
 
-// ✅ Search company (prefix)
+// ✅ Search
 router.get("/search", async (req, res) => {
   try {
     const { q } = req.query;
     if (!q) return res.json([]);
 
     const query = `
-      SELECT * FROM \`${credentials.project_id}.${datasetId}.${tableId}\`
+      SELECT * FROM \`${projectId}.${datasetId}.${tableId}\`
       WHERE LOWER(companyName) LIKE @prefix
       LIMIT 10
     `;
@@ -127,11 +129,11 @@ router.get("/search", async (req, res) => {
     res.json(rows);
   } catch (err) {
     console.error("GET /search error:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: err.message });
   }
 });
 
-// ✅ Toggle active → inactive
+// ✅ Toggle inactive
 router.post("/toggle/:companyName", async (req, res) => {
   try {
     const { companyName } = req.params;
@@ -140,7 +142,7 @@ router.post("/toggle/:companyName", async (req, res) => {
     if (!companyName) return res.status(400).json({ error: "Missing companyName" });
 
     const querySelect = `
-      SELECT status FROM \`${credentials.project_id}.${datasetId}.${tableId}\`
+      SELECT status FROM \`${projectId}.${datasetId}.${tableId}\`
       WHERE companyName=@companyName ${projectName ? "AND projectName=@projectName" : ""}
       LIMIT 1
     `;
@@ -150,7 +152,7 @@ router.post("/toggle/:companyName", async (req, res) => {
     if (rows[0].status === "inactive") return res.status(409).json({ error: "Already inactive" });
 
     const queryUpdate = `
-      UPDATE \`${credentials.project_id}.${datasetId}.${tableId}\`
+      UPDATE \`${projectId}.${datasetId}.${tableId}\`
       SET status='inactive'
       WHERE companyName=@companyName ${projectName ? "AND projectName=@projectName" : ""}
     `;
@@ -158,19 +160,19 @@ router.post("/toggle/:companyName", async (req, res) => {
     res.json({ success: true, message: "Status changed to inactive" });
   } catch (err) {
     console.error("POST /toggle error:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: err.message });
   }
 });
 
-// ✅ Clear entire table
+// ✅ Clear table
 router.post("/clear", async (req, res) => {
   try {
-    const query = `TRUNCATE TABLE \`${credentials.project_id}.${datasetId}.${tableId}\``;
+    const query = `TRUNCATE TABLE \`${projectId}.${datasetId}.${tableId}\``;
     await bigquery.query(query);
     res.json({ success: true, message: "Table cleared" });
   } catch (err) {
     console.error("POST /clear error:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -180,7 +182,7 @@ router.delete("/delete", async (req, res) => {
     const { companyName, projectName } = req.body;
     if (!companyName) return res.status(400).json({ error: "Missing companyName" });
 
-    let query = `DELETE FROM \`${credentials.project_id}.${datasetId}.${tableId}\` WHERE companyName=@companyName`;
+    let query = `DELETE FROM \`${projectId}.${datasetId}.${tableId}\` WHERE companyName=@companyName`;
     const params = { companyName };
     if (projectName) {
       query += " AND projectName=@projectName";
@@ -191,7 +193,7 @@ router.delete("/delete", async (req, res) => {
     res.json({ success: true, message: `"${companyName}" deleted` });
   } catch (err) {
     console.error("DELETE /delete error:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: err.message });
   }
 });
 
