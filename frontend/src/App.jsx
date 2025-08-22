@@ -56,7 +56,7 @@ export default function App() {
       </div>
 
       {/* Filters & Search */}
-      <div className="w-full flex flex-wrap items-center gap-2 mb-4">
+{/*       <div className="w-full flex flex-wrap items-center gap-2 mb-4">
         {["all", "active"].map((f) => (
           <button
             key={f}
@@ -78,7 +78,7 @@ export default function App() {
           className="ml-auto border border-gray-300 px-3 py-1 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
         />
       </div>
-
+ */}
       {/* Tables */}
       <div className="w-full space-y-3">
         {loading && <p className="text-center text-gray-500 text-sm">Loading...</p>}
