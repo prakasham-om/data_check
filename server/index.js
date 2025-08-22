@@ -11,7 +11,7 @@ const app = express();
 app.use(express.json());
 
 app.use(cors({
-  origin: 'https://data-check-dusky.vercel.app'
+  origin: 'https://data-check-1.onrender.com'
 }));
 
 
