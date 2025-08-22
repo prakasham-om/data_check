@@ -14,5 +14,9 @@ export default defineConfig({
         global: 'globalThis' // 👈 extra safeguard for deps that expect global
       }
     }
+  },
+  server: {
+    host: '0.0.0.0',
+    port: process.env.PORT ? parseInt(process.env.PORT) : 5173
   }
 })
