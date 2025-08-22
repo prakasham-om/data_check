@@ -101,7 +101,9 @@ export default function CompanyForm({ onAdd }) {
     setLoading(false);
   }
 };
-
+ if (activevalue === NaN){
+   setStatus('Active')
+ }
 
   return (
     <form
