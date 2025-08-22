@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import * as XLSX from "xlsx";
 
-const API_BASE = "http://localhost:5000/api/csv";
+const API_BASE = "https://data-check.onrender.com/api/csv";
 
 export default function CompanyTable() {
   const [rows, setRows] = useState([]);
