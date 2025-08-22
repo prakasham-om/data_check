@@ -178,7 +178,7 @@ export default function CompanyForm({ onAdd }) {
         type="number"
         value={activeValue}
         onChange={(e) => setActiveValue(e.target.value)}
-        placeholder="Active Value"
+        placeholder="Approach"
         className="border p-2 rounded w-full focus:ring-2 focus:ring-blue-400"
       />
 
