@@ -285,4 +285,4 @@ export default function CompanyTable() {
       )}
     </div>
   );
-}import React, { useState, useEffect } from "react";
+}
