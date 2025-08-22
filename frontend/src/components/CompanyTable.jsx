@@ -1,36 +1,75 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import * as XLSX from "xlsx";
 
-const API_BASE = " https://data-check.onrender.com/api/company" ;
+const API_BASE = "http://localhost:5000/api/csv";
 
-export default function CompanyTable({ rows, setRows }) {
+export default function CompanyTable() {
+  const [rows, setRows] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 100;
+  const [filteredRows, setFilteredRows] = useState(null);
+  const [filter, setFilter] = useState("all"); // all / active
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchDebounce = useRef(null);
+  const rowsPerPage = 20;
 
-  const totalPages = Math.ceil(rows.length / rowsPerPage);
-  const displayedRows = rows.slice(
-    (currentPage - 1) * rowsPerPage,
-    currentPage * rowsPerPage
-  );
-
-  // Check if logged-in user can perform delete/clear
   const loggedInEmpId = localStorage.getItem("empId");
   const allowedEmpIds = ["prakash", "Prakash", "8910"];
   const canEditGlobal = allowedEmpIds.includes(loggedInEmpId);
 
-  // Toggle Status
+  // Fetch rows from backend
+  const fetchRows = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/list`);
+      let data = res.data.data || [];
+
+      // Apply filter
+      if (filter === "active") {
+        data = data.filter((r) => r.status.toLowerCase() === "active");
+      }
+
+      // Apply search
+      if (searchQuery.trim() !== "") {
+        data = data.filter((r) =>
+          r.companyName.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      }
+
+      setRows(data);
+      setFilteredRows(null); // reset filteredRows when fetching
+    } catch (err) {
+      console.error("Fetch rows error:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchRows();
+  }, [filter, searchQuery]);
+
+  // Pagination helpers
+  const displayedRows = filteredRows ?? rows;
+  const totalPages = Math.ceil(displayedRows.length / rowsPerPage);
+  const paginatedRows = displayedRows.slice(
+    (currentPage - 1) * rowsPerPage,
+    currentPage * rowsPerPage
+  );
+
+  useEffect(() => setCurrentPage(1), [rows.length, filteredRows]);
+
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
+
+  // Toggle company
   const handleToggle = async (companyName) => {
     try {
-      await axios.post(`${API_BASE}/toggle/${companyName}`);
-      alert("Status updated");
-      // Update locally
-      setRows((prev) =>
-        prev.map((r) =>
-          r.companyName === companyName
-            ? { ...r, status: r.status === "Active" ? "Inactive" : "Active" }
-            : r
-        )
-      );
+      const res = await axios.post(`${API_BASE}/toggle/${companyName}`);
+      if (res.data.success) {
+        fetchRows();
+        alert(res.data.message || "Status toggled successfully");
+      } else {
+        alert(res.data.error || "Failed to toggle");
+      }
     } catch (err) {
       alert(err.response?.data?.error || "Failed to toggle status");
     }
@@ -38,118 +77,162 @@ export default function CompanyTable({ rows, setRows }) {
 
   // Delete company
   const handleDelete = async (companyName) => {
-    if (!window.confirm(`Are you sure you want to delete "${companyName}"?`)) return;
-
+    if (!window.confirm(`Delete "${companyName}"?`)) return;
     try {
-      const response = await axios.delete(`${API_BASE}/delete`, { data: { companyName } });
-      if (response.data?.success || response.data === undefined) {
-        alert(response.data?.message || "Company deleted successfully");
-        setRows((prevRows) => prevRows.filter((r) => r.companyName !== companyName));
+      const res = await axios.delete(`${API_BASE}/delete`, { data: { companyName } });
+      if (res.data.success) {
+        fetchRows();
+        alert(res.data.message || "Deleted successfully");
       } else {
-        alert(response.data?.error || "Failed to delete company");
+        alert(res.data.error || "Failed to delete");
       }
     } catch (err) {
-      alert(err.response?.data?.error || "Failed to delete company");
+      alert(err.response?.data?.error || "Failed to delete");
     }
   };
 
-  // Clear Sheet
-const handleClearSheet = async (sheetName) => {
-  // Ask user to type the sheet name to confirm
-  const input = window.prompt(`Type the sheet name "${sheetName}" to confirm clearing:`);
+  const today = new Date().toISOString().split("T")[0];
+  const addedToday = rows.filter((r) => r.createdAt?.split("T")[0] === today).length;
+  const zeroCount = rows.filter((r) => r.status === "Active" && r.activeValue === "0").length;
 
-  if (!input || input.trim() !== sheetName) {
-    alert("Sheet name mismatch. Deletion cancelled.");
-    return;
-  }
-
-  try {
-    await axios.post(`${API_BASE}/clear/${sheetName}`);
-    alert(`Sheet "${sheetName}" cleared successfully`);
-
-    // Remove all rows of that sheet locally
-    setRows((prev) => prev.filter((r) => r.sheetName !== sheetName));
-  } catch (err) {
-    alert(err.response?.data?.error || "Failed to clear sheet");
-  }
-};
-
-
-  const goToPage = (page) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  // Handle search input with debounce
+  const handleSearch = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    if (searchDebounce.current) clearTimeout(searchDebounce.current);
+    searchDebounce.current = setTimeout(() => fetchRows(), 300);
+  };
+   const exportCSV = () => {
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Companies");
+    XLSX.writeFile(wb, "companies.xlsx");
   };
 
-  useEffect(() => {
-    setCurrentPage(totalPages || 1);
-  }, [rows.length]);
-
-  const uniqueSheets = [...new Set(rows.map((r) => r.sheetName))];
-
   return (
-    <div>
-      {/* Clear Sheet Buttons */}
-      {canEditGlobal && uniqueSheets.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-3">
-          {uniqueSheets.map((sheet) => (
-            <button
-              key={sheet}
-              onClick={() => handleClearSheet(sheet)}
-              className="px-3 py-1 rounded bg-orange-500 text-white text-sm hover:bg-orange-600 transition"
-            >
-              Clear {sheet}
-            </button>
-          ))}
+    <div className="space-y-5">
+      {/* Filters + Search */}
+      <div className="flex flex-wrap items-center gap-3 mb-6">
+        {["all", "active"].map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
+              filter === f
+                ? "bg-blue-600 text-white shadow-md"
+                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+            }`}
+          >
+            {f.charAt(0).toUpperCase() + f.slice(1)}
+          </button>
+        ))}
+
+        <input
+          type="text"
+          placeholder="Search company..."
+          value={searchQuery}
+          onChange={handleSearch}
+          className="ml-auto border border-gray-300 px-4 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-sm"
+        />
+
+        <div
+          onClick={() => setFilteredRows(rows.filter((r) => r.activeValue === "0"))}
+          className="px-4 py-2 rounded-xl bg-red-100 text-red-700 cursor-pointer hover:bg-red-200 text-sm font-medium shadow-sm"
+        >
+          Zero Approach: {zeroCount}
+        </div>
+      </div>
+
+      {/* Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      <div className="p-3 bg-blue-50 border rounded-xl text-center shadow-sm">
+        <button onClick={exportCSV} className="text-lg text-gray-900">
+          Download XCEL
+
+        </button>
+      </div>
+        <div className="p-3 bg-blue-50 border rounded-xl text-center shadow-sm">
+          <p className="text-xs text-gray-500">Total Records</p>
+          
+          <p className="text-lg font-semibold text-blue-600">{rows.length}</p>
+        </div>
+        <div className="p-3 bg-green-50 border rounded-xl text-center shadow-sm">
+          <p className="text-xs text-gray-500">Added Today</p>
+          <p className="text-lg font-semibold text-green-600">{addedToday}</p>
+        </div>
+        <div className="p-3 bg-purple-50 border rounded-xl text-center shadow-sm">
+          <p className="text-xs text-gray-500">Page</p>
+          <p className="text-lg font-semibold text-purple-600">
+            {currentPage}/{totalPages || 1}
+          </p>
+        </div>
+      </div>
+
+      {filteredRows && (
+        <div className="flex justify-end mb-2">
+          <button
+            onClick={() => setFilteredRows(null)}
+            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg"
+          >
+            Clear Filter
+          </button>
         </div>
       )}
 
       {/* Table */}
-      <div className="overflow-x-auto border rounded">
+      <div className="overflow-x-auto rounded-2xl shadow-md border">
         <table className="w-full text-sm text-gray-700 border-collapse">
-          <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
+          <thead className="bg-gray-100 text-gray-700 uppercase text-xs sticky top-0">
             <tr>
-              <th className="p-2 text-left border-b">#</th>
-              <th className="p-2 text-left border-b">Company</th>
-              <th className="p-2 text-left border-b">Project</th>
-              <th className="p-2 text-left border-b">Emp ID</th>
-              <th className="p-2 text-left border-b">Date</th>
-              <th className="p-2 text-center border-b">Action</th>
+              <th className="p-3 text-left">#</th>
+              <th className="p-3 text-left">Company</th>
+              <th className="p-3 text-left">Project</th>
+              <th className="p-3 text-left">Emp ID</th>
+              <th className="p-3 text-left">Date</th>
+              <th className="p-3 text-center">Status</th>
+              <th className="p-3 text-center">Action</th>
             </tr>
           </thead>
           <tbody>
-            {displayedRows.length > 0 ? (
-              displayedRows.map((item, i) => (
-                <tr
-                  key={item.companyName + i}
-                  className={`hover:bg-gray-50 ${
-                    i % 2 === 0 ? "bg-white" : "bg-gray-50"
-                  }`}
-                >
-                  <td className="p-2">{(currentPage - 1) * rowsPerPage + i + 1}</td>
-                  <td className="p-2 font-medium">{item.companyName}</td>
-                  <td className="p-2">{item.projectName}</td>
-                  <td className="p-2">{item.empId}</td>
-                  <td className="p-2">{new Date(item.createdAt).toLocaleDateString()}</td>
-                  <td className="p-2 text-center flex justify-center gap-1">
+            {paginatedRows.length > 0 ? (
+              paginatedRows.map((item, i) => (
+                <tr key={item.companyName + i} className="hover:bg-gray-50 transition border-t">
+                  <td className="p-3">{(currentPage - 1) * rowsPerPage + i + 1}</td>
+                  <td className="p-3 font-medium">{item.companyName}</td>
+                  <td className="p-3">{item.projectName || "No Project"}</td>
+                  <td className="p-3">{item.empId}</td>
+                  <td className="p-3">{new Date(item.createdAt).toLocaleDateString()}</td>
+                  <td className="p-3 text-center">
+                    <span
+                      className={`px-2 py-1 text-xs rounded-full ${
+                        item.status === "Active"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700"
+                      }`}
+                    >
+                      {item.status}
+                    </span>
+                  </td>
+                  <td className="p-3 text-center flex justify-center gap-2">
                     {item.status === "Active" ? (
                       <button
                         onClick={() => handleToggle(item.companyName)}
-                        className="px-3 py-1 rounded bg-green-500 text-white text-sm hover:bg-green-600 transition"
+                        className="px-3 py-1 rounded-lg bg-green-500 text-white text-sm hover:bg-green-600 transition"
                       >
                         Deactivate
                       </button>
                     ) : (
                       <button
                         disabled
-                        className="px-3 py-1 rounded bg-gray-400 text-white text-sm cursor-not-allowed"
+                        className="px-3 py-1 rounded-lg bg-gray-400 text-white text-sm cursor-not-allowed"
                       >
-                        Active
+                        Existing
                       </button>
                     )}
-                    {/* Delete only if logged-in user is allowed */}
                     {canEditGlobal && (
                       <button
                         onClick={() => handleDelete(item.companyName)}
-                        className="px-3 py-1 rounded bg-red-500 text-white text-sm hover:bg-red-600 transition"
+                        className="px-3 py-1 rounded-lg bg-red-500 text-white text-sm hover:bg-red-600 transition"
                       >
                         Delete
                       </button>
@@ -159,47 +242,47 @@ const handleClearSheet = async (sheetName) => {
               ))
             ) : (
               <tr>
-                <td colSpan={6} className="text-center p-4 text-gray-500">
+                <td colSpan={7} className="text-center p-6 text-gray-500 italic">
                   No data found
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-2 mt-3">
-            <button
-              onClick={() => goToPage(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
-            >
-              Prev
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => (
-              <button
-                key={i}
-                onClick={() => goToPage(i + 1)}
-                className={`px-3 py-1 rounded ${
-                  currentPage === i + 1
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-200 hover:bg-gray-300"
-                }`}
-              >
-                {i + 1}
-              </button>
-            ))}
-            <button
-              onClick={() => goToPage(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-        )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-3">
+          <button
+            onClick={() => goToPage(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+          >
+            Prev
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i}
+              onClick={() => goToPage(i + 1)}
+              className={`px-3 py-1 rounded-lg ${
+                currentPage === i + 1
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-200 hover:bg-gray-300"
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+          <button
+            onClick={() => goToPage(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }
