@@ -26,6 +26,7 @@ const industryLocations = [
   "pharma_apac", "pharma_can", "pharma_latin", "pharma_us",
   "biotech_apac", "biotech_can", "biotech_latin", "biotech_us",
   "cybersecurity_apac", "cybersecurity_can", "cybersecurity_latin", "cybersecurity_us",
-  "martech_apac", "martech_can", "martech_latin", "martech_us"
+  "martech_apac", "martech_can", "martech_latin", "martech_us","cio_review","cio_review_latin",
+"cio_review_canada","cio_review_eu","cio_review_apac"
 ];
 export default industryLocations;
