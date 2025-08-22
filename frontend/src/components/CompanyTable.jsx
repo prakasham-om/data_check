@@ -198,7 +198,16 @@ export default function CompanyTable() {
               paginatedRows.map((item, i) => (
                 <tr key={item.companyName + i} className="hover:bg-gray-50 transition border-t">
                   <td className="p-3">{(currentPage - 1) * rowsPerPage + i + 1}</td>
-                  <td className="p-3 font-medium">{item.companyName}</td>
+                  <td className="p-3 font-medium">
+                    <a
+                      href={item.companyName}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      {item.companyName}
+                    </a>
+                  </td>
                   <td className="p-3">{item.projectName || "No Project"}</td>
                   <td className="p-3">{item.empId}</td>
                   <td className="p-3">{new Date(item.createdAt).toLocaleDateString()}</td>
