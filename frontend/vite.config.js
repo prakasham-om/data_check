@@ -17,7 +17,7 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    port: process.env.PORT ? parseInt(process.env.PORT) : 5173,
+    port: 10000,
      allowedHosts: [
       'data-check-1.onrender.com',
       // add other hosts you want to allow here
