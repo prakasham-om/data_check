@@ -17,7 +17,7 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    port: 10000,
+    port: 5173,
      allowedHosts: [
       'data-check-1.onrender.com',
       // add other hosts you want to allow here
