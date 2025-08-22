@@ -200,7 +200,7 @@ export default function CompanyTable() {
                   <td className="p-3">{(currentPage - 1) * rowsPerPage + i + 1}</td>
                   <td className="p-3 font-medium">
                     <a
-                      href={item.companyName}
+                      href={`https://${item.companyName}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:underline"
