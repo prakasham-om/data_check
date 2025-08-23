@@ -2,12 +2,11 @@
 const { google } = require("googleapis");
 require("dotenv").config();
 const path = require("path");
-const keyPath = path.join(__dirname, "../config/credentials.json");
 
 
 const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
 const MAX_ROWS_PER_SHEET = 50000;
-const credentialsPath = JSON.parse(Buffer.from(process.env.CRED, "base64").toString("utf8"));
+const cred = JSON.parse(Buffer.from(process.env.CRED, "base64").toString("utf8"));
 const auth = new google.auth.GoogleAuth({
   credentials: cred,
 
