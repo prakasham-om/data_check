@@ -36,9 +36,9 @@ app.use(cors({
 
 
 // API routes
-app.use('/api/company', companyRoutes);
-//app.use('/api/sheet', sheetRoutes);
-app.use('/api/csv', require('./routes/csvRoutes'));
+//app.use('/api/company', companyRoutes);
+app.use('/api/sheet', sheetRoutes);
+//app.use('/api/csv', require('./routes/csvRoutes'));
 // Server port
 const PORT = 5000;
 
