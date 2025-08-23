@@ -136,7 +136,7 @@ export default function CompanyTable() {
         />
 
         <div
-          onClick={() => setFilteredRows(rows.filter((r) => r.activeValue === "0"))}
+          onClick={() => setFilteredRows(rows.filter((r) => r.activeValue === 0))}
           className="px-4 py-2 rounded-xl bg-red-100 text-red-700 cursor-pointer hover:bg-red-200 text-sm font-medium shadow-sm"
         >
           Zero Approach: {zeroCount}
