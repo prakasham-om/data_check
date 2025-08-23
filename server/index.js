@@ -13,7 +13,8 @@ app.use(express.json());
 app.use(cors({
    origin: [
     "https://data-check-1.onrender.com",  // deployed frontend
-    "http://localhost:5173"              // local dev frontend
+    "http://localhost:5173",// local dev frontend
+      "https://data-check-dusky.vercel.app"
   ]
 }));
 
