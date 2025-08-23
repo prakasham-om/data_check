@@ -9,7 +9,13 @@ const {
   getSheetList,
 } = require("../services/googleSheets"); // adjust path
 
-// ✅ List all companies
+   function getISTDate() {
+  const date = new Date();
+  const istOffset = 5.5 * 60 * 60 * 1000; // 5:30
+  return new Date(date.getTime() + istOffset).toISOString();
+}
+
+createdAt=getISTDate();
 router.get("/list", async (req, res) => {
   try {
     const { status, project, page = 1, limit = 20 } = req.query;
@@ -34,7 +40,6 @@ router.post("/creat", async (req, res) => {
     const { companyName, projectName, status = "Active", empId,activeValue = "" } = req.body;
     if (!companyName || !empId) return res.status(400).json({ error: "Missing fields" });
 
-    const createdAt = new Date().toISOString();
     const values = [[companyName, projectName || "", status, empId, createdAt,activeValue]];
 
     const result = await appendRows(values);
