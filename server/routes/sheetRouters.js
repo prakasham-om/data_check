@@ -31,11 +31,11 @@ router.get("/list", async (req, res) => {
 // ✅ Add new company
 router.post("/creat", async (req, res) => {
   try {
-    const { companyName, projectName, status = "Active", empId } = req.body;
+    const { companyName, projectName, status = "Active", empId,activeValue = "" } = req.body;
     if (!companyName || !empId) return res.status(400).json({ error: "Missing fields" });
 
     const createdAt = new Date().toISOString();
-    const values = [[companyName, projectName || "", status, empId, createdAt]];
+    const values = [[companyName, projectName || "", status, empId, createdAt,activeValue]];
 
     const result = await appendRows(values);
     res.json(result);
@@ -64,11 +64,11 @@ router.get("/search", async (req, res) => {
 router.post("/toggle/:companyName", async (req, res) => {
   try {
     const { companyName } = req.params;
-    const { projectName } = req.body;
+
     if (!companyName) return res.status(400).json({ error: "Missing companyName" });
 
     const rows = await getRows();
-    const row = rows.find(r => r.companyName === companyName && (!projectName || r.projectName === projectName));
+    const row = rows.find(r => r.companyName === companyName);
     if (!row) return res.status(404).json({ error: "Company not found" });
     if (row.status.toLowerCase() === "inactive") return res.status(409).json({ error: "Already inactive" });
 
