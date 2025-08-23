@@ -32,9 +32,9 @@ export default function CompanyForm({ onAdd }) {
     debounceRef.current = setTimeout(async () => {
       try {
         const res = await axios.get(`${API_BASE}/search?q=${trimmed}`);
-        setSuggestions(res.data.data || []);
+        setSuggestions(res.data || []);
         setIsDuplicate(
-          res.data.data.some(
+          res.data.some(
             (c) => c.companyName.toLowerCase() === trimmed.toLowerCase()
           )
         );
