@@ -138,29 +138,19 @@ router.post("/toggle/:companyName", async (req, res) => {
   try {
     const { companyName } = req.params;
     const { projectName } = req.body;
-
     if (!companyName) return res.status(400).json({ error: "Missing companyName" });
 
-    const querySelect = `
-      SELECT status FROM \`${projectId}.${datasetId}.${tableId}\`
-      WHERE companyName=@companyName ${projectName ? "AND projectName=@projectName" : ""}
-      LIMIT 1
-    `;
-    const [rows] = await bigquery.query({ query: querySelect, params: { companyName, projectName } });
-    if (!rows.length) return res.status(404).json({ error: "Company not found" });
+    const rows = await getRows();
+    const row = rows.find(r => r.companyName === companyName && (!projectName || r.projectName === projectName));
+    if (!row) return res.status(404).json({ error: "Company not found" });
+    if (row.status.toLowerCase() === "inactive") return res.status(409).json({ error: "Already inactive" });
 
-    if (rows[0].status === "inactive") return res.status(409).json({ error: "Already inactive" });
-
-    const queryUpdate = `
-      UPDATE \`${projectId}.${datasetId}.${tableId}\`
-      SET status='inactive'
-      WHERE companyName=@companyName ${projectName ? "AND projectName=@projectName" : ""}
-    `;
-    await bigquery.query({ query: queryUpdate, params: { companyName, projectName } });
+    const rowIdentifier = { sheetName: row.sheetName, rowId: row.rowId };
+    await updateRow(rowIdentifier, [row.companyName, row.projectName, "Inactive", row.empId, row.createdAt]);
     res.json({ success: true, message: "Status changed to inactive" });
   } catch (err) {
     console.error("POST /toggle error:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Server error" });
   }
 });
 
