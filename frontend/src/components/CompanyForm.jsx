@@ -9,7 +9,7 @@ export default function CompanyForm({ onAdd }) {
   const [projectName, setProjectName] = useState("");
   const [status, setStatus] = useState("Inactive");
   const [empId, setEmpId] = useState("");
-  const [activeValue, setActiveValue] = useState(NaN);
+  const [activeValue, setActiveValue] = useState();
   const [suggestions, setSuggestions] = useState([]);
   const [isDuplicate, setIsDuplicate] = useState(false);
   const [loading, setLoading] = useState(false);
