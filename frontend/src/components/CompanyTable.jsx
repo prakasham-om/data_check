@@ -93,7 +93,7 @@ export default function CompanyTable() {
 
   const today = new Date().toISOString().split("T")[0];
   const addedToday = rows.filter((r) => r.createdAt?.split("T")[0] === today).length;
-  const zeroCount = rows.filter((r) => r.status === "Active" && r.activeValue === "0").length;
+  const zeroCount = rows.filter((r) => r.status === "Active" && r.activeValue === 0).length;
 
   // Handle search input with debounce
   const handleSearch = (e) => {
