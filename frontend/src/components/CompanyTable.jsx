@@ -1,7 +1,7 @@
 import React, { memo } from "react";
 import { FixedSizeList as List } from "react-window";
 
-function CompanyRow({ data, index, style }) {
+function CompanyRow({ index, style, data }) {
   const { rows, page, limit, isAdmin, onToggle, onDelete } = data;
   const r = rows[index];
   const isActive = r.status === "Active";
@@ -27,14 +27,11 @@ function CompanyRow({ data, index, style }) {
           onClick={() => onToggle(r.companyName)}
           disabled={!isActive}
           className={`px-3 py-1 rounded text-white ${
-            isActive
-              ? "bg-yellow-500 hover:bg-yellow-600"
-              : "bg-gray-300 cursor-not-allowed"
+            isActive ? "bg-yellow-500 hover:bg-yellow-600" : "bg-gray-300 cursor-not-allowed"
           }`}
         >
           {!isActive ? "Existing" : "Add"}
         </button>
-
         {isAdmin && (
           <button
             onClick={() => onDelete(r.companyName)}
@@ -53,30 +50,39 @@ function CompanyTable({ rows, loading, page, limit, isAdmin, onToggle, onDelete 
   if (!rows || rows.length === 0) return <div className="p-6 text-center text-gray-500">No data found</div>;
 
   return (
-    <div className="overflow-x-auto bg-white border rounded shadow-sm">
-      <table className="w-full text-sm">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="p-3 text-left">#</th>
-            <th className="p-3 text-left">Company</th>
-            <th className="p-3 text-left">Project</th>
-            <th className="p-3 text-left">Emp ID</th>
-            <th className="p-3 text-left">Date</th>
-            <th className="p-3 text-center">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <List
-            height={400}
-            itemCount={rows.length}
-            itemSize={45}
-            width="100%"
-            itemData={{ rows, page, limit, isAdmin, onToggle, onDelete }}
-          >
-            {CompanyRow}
-          </List>
-        </tbody>
-      </table>
+    <div className="overflow-x-auto border rounded shadow-sm">
+      <div className="w-full" style={{ display: "grid", gridTemplateRows: "auto 1fr" }}>
+        {/* Table header */}
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="p-3 text-left">#</th>
+              <th className="p-3 text-left">Company</th>
+              <th className="p-3 text-left">Project</th>
+              <th className="p-3 text-left">Emp ID</th>
+              <th className="p-3 text-left">Date</th>
+              <th className="p-3 text-center">Status</th>
+            </tr>
+          </thead>
+        </table>
+
+        {/* Virtualized rows */}
+        <div style={{ height: 400, overflow: "auto" }}>
+          <table className="w-full text-sm">
+            <tbody>
+              <List
+                height={400}
+                itemCount={rows.length}
+                itemSize={45}
+                width="100%"
+                itemData={{ rows, page, limit, isAdmin, onToggle, onDelete }}
+              >
+                {CompanyRow}
+              </List>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
