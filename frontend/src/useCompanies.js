@@ -10,6 +10,7 @@ export function useCompanies({ filter, searchQuery, dateFrom, dateTo, zeroFilter
 
   const abortRef = useRef(null);
 
+  // Fetch rows with filters + zeroApproach
   const fetchRows = useCallback(async () => {
     setLoading(true);
     if (abortRef.current) abortRef.current.abort();
@@ -28,7 +29,6 @@ export function useCompanies({ filter, searchQuery, dateFrom, dateTo, zeroFilter
       const res = await axios.get(`${API_BASE}/list`, { params, signal: abortRef.current.signal });
       let data = res.data?.data || [];
 
-      // Apply zeroApproach filter on client
       if (zeroFilterActive) {
         data = data.filter(r => r.status === "Active" && Number(r.activeValue) === 0);
       }
@@ -42,11 +42,11 @@ export function useCompanies({ filter, searchQuery, dateFrom, dateTo, zeroFilter
     }
   }, [page, limit, filter, searchQuery, dateFrom, dateTo, zeroFilterActive]);
 
-  // Toggle status
+  // Toggle company status (Active ↔ Inactive)
   const toggleStatus = useCallback(async (companyName) => {
     try {
-      await axios.post(`${API_BASE}/toggle/${companyName}`);
-      fetchRows(); // Refresh table after toggle
+      await axios.post(`${API_BASE}/toggle/${encodeURIComponent(companyName)}`);
+      fetchRows();
     } catch (err) {
       console.error(err);
       alert(err.response?.data?.error || "Failed to toggle status");
@@ -56,11 +56,22 @@ export function useCompanies({ filter, searchQuery, dateFrom, dateTo, zeroFilter
   // Delete company
   const deleteCompany = useCallback(async (companyName) => {
     try {
-      await axios.delete(`${API_BASE}/delete/${companyName}`);
-      fetchRows(); // Refresh table after deletion
+      await axios.delete(`${API_BASE}/delete`, { data: { companyName } });
+      fetchRows();
     } catch (err) {
       console.error(err);
       alert(err.response?.data?.error || "Failed to delete company");
+    }
+  }, [fetchRows]);
+
+  // Clear last sheet
+  const clearSheet = useCallback(async () => {
+    try {
+      await axios.post(`${API_BASE}/clear`);
+      fetchRows();
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || "Failed to clear sheet");
     }
   }, [fetchRows]);
 
@@ -68,5 +79,5 @@ export function useCompanies({ filter, searchQuery, dateFrom, dateTo, zeroFilter
     fetchRows();
   }, [fetchRows]);
 
-  return { rows, total, loading, fetchRows, toggleStatus, deleteCompany };
+  return { rows, total, loading, fetchRows, toggleStatus, deleteCompany, clearSheet };
 }
