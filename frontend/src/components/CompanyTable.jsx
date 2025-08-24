@@ -15,7 +15,6 @@ function CompanyTable({ rows, loading, page, limit, isAdmin, onToggle, onDelete 
             <th className="p-3 text-left">Emp ID</th>
             <th className="p-3 text-left">Date</th>
             <th className="p-3 text-center">Status</th>
-            <th className="p-3 text-center">Action</th>
           </tr>
         </thead>
         <tbody>
@@ -38,15 +37,6 @@ function CompanyTable({ rows, loading, page, limit, isAdmin, onToggle, onDelete 
                 <td className="p-3">{r.projectName || "—"}</td>
                 <td className="p-3">{r.empId}</td>
                 <td className="p-3">{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "—"}</td>
-                <td className="p-3 text-center">
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs ${
-                      isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {r.status}
-                  </span>
-                </td>
                 <td className="p-3 text-center space-x-2">
                   <button
                     onClick={() => onToggle(r.companyName)}
@@ -55,7 +45,7 @@ function CompanyTable({ rows, loading, page, limit, isAdmin, onToggle, onDelete 
                       isActive ? "bg-yellow-500 hover:bg-yellow-600" : "bg-gray-300 cursor-not-allowed"
                     }`}
                   >
-                    {isActive ? "Deactivate" : "Inactive"}
+                    {isActive ? "Existing" : " Add "}
                   </button>
 
                   {isAdmin && (
