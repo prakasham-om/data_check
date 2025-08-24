@@ -125,7 +125,7 @@ router.delete("/delete", async (req, res) => {
     res.json({ success: true, message: `"${companyName}" deleted` });
   } catch (err) {
     console.error("DELETE /delete error:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: err });
   }
 });
 
