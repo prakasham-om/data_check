@@ -56,7 +56,7 @@ export function useCompanies({ filter, searchQuery, dateFrom, dateTo, zeroFilter
   // Delete company
   const deleteCompany = useCallback(async (companyName) => {
     try {
-      await axios.delete(`${API_BASE}/delete`, { data: { companyName } });
+      await axios.delete(`${API_BASE}/delete`, { data:companyName});
       fetchRows();
     } catch (err) {
       console.error(err);
