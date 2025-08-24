@@ -2,7 +2,7 @@ import React, { memo } from "react";
 
 function CompanyTable({ rows, loading, page, limit, isAdmin, onToggle, onDelete }) {
   if (loading) return <div className="p-6 text-center">Loading...</div>;
-  if (!rows.length) return <div className="p-6 text-center text-gray-500">No data found</div>;
+  if (rows.length === 0) return <div className="p-6 text-center text-gray-500">No data found</div>;
 
   return (
     <div className="overflow-x-auto bg-white border rounded shadow-sm">
@@ -19,37 +19,48 @@ function CompanyTable({ rows, loading, page, limit, isAdmin, onToggle, onDelete 
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, idx) => (
-            <tr key={r._id || idx} className="border-t hover:bg-gray-50">
-              <td className="p-3">{(page - 1) * limit + idx + 1}</td>
-              <td className="p-3">{r.companyName}</td>
-              <td className="p-3">{r.projectName || "—"}</td>
-              <td className="p-3">{r.empId}</td>
-              <td className="p-3">{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "—"}</td>
-              <td className="p-3 text-center">
-                <span className={`px-2 py-1 rounded-full text-xs ${r.status === "Active" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-                  {r.status}
-                </span>
-              </td>
-              <td className="p-3 text-center space-x-2">
-                <button
-                  onClick={() => onToggle(r.companyName, r.status)}
-                  disabled={r.status !== "Active"}
-                  className={`px-3 py-1 text-white rounded ${r.status === "Active" ? "bg-yellow-500 hover:bg-yellow-600" : "bg-gray-300 cursor-not-allowed"}`}
-                >
-                  {r.status === "Active" ? "Deactivate" : "Inactive"}
-                </button>
-                {isAdmin && (
-                  <button
-                    onClick={() => onDelete(r.companyName)}
-                    className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded"
+          {rows.map((r, idx) => {
+            const isActive = r.status === "Active";
+
+            return (
+              <tr key={r._id || idx} className="border-t hover:bg-gray-50">
+                <td className="p-3">{(page - 1) * limit + idx + 1}</td>
+                <td className="p-3">{r.companyName}</td>
+                <td className="p-3">{r.projectName || "—"}</td>
+                <td className="p-3">{r.empId}</td>
+                <td className="p-3">{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "—"}</td>
+                <td className="p-3 text-center">
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs ${
+                      isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                    }`}
                   >
-                    Delete
+                    {r.status}
+                  </span>
+                </td>
+                <td className="p-3 text-center space-x-2">
+                  <button
+                    onClick={() => onToggle(r.companyName)}
+                    disabled={!isActive} // deactivate only active ones
+                    className={`px-3 py-1 rounded text-white ${
+                      isActive ? "bg-yellow-500 hover:bg-yellow-600" : "bg-gray-300 cursor-not-allowed"
+                    }`}
+                  >
+                    {isActive ? "Deactivate" : "Inactive"}
                   </button>
-                )}
-              </td>
-            </tr>
-          ))}
+
+                  {isAdmin && (
+                    <button
+                      onClick={() => onDelete(r.companyName)}
+                      className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
