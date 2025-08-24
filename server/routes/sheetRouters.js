@@ -117,14 +117,11 @@ router.delete("/delete", async (req, res) => {
     if (!companyName) return res.status(400).json({ error: "Missing companyName" });
 
     const rows = await getRows();
-    const row = rows.find(
-      (r) => r.companyName === companyName 
-    );
+    const row = rows.find(r => r.companyName === companyName);
     if (!row) return res.status(404).json({ error: "Company not found" });
 
     const id = { sheetName: row.sheetName, rowId: row.rowId };
     await deleteRow(id);
-
     res.json({ success: true, message: `"${companyName}" deleted` });
   } catch (err) {
     console.error("DELETE /delete error:", err);
