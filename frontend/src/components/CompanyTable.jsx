@@ -1,32 +1,69 @@
-import { Column, Table, AutoSizer } from "react-virtualized";
+import React, { memo } from "react";
 
-export default function CompanyTable({ rows, page, limit, isAdmin, onToggle, onDelete }) {
+function CompanyTable({ rows, loading, page, limit, isAdmin, onToggle, onDelete }) {
+  if (loading) return <div className="p-6 text-center">Loading...</div>;
+  if (!rows || rows.length === 0) return <div className="p-6 text-center text-gray-500">No data found</div>;
+
   return (
-    <div style={{ height: 500 }}>
-      <AutoSizer>
-        {({ width, height }) => (
-          <Table
-            width={width}
-            height={height}
-            headerHeight={40}
-            rowHeight={45}
-            rowCount={rows.length}
-            rowGetter={({ index }) => rows[index]}
-          >
-            <Column label="#" dataKey="index" width={50} cellRenderer={({ rowIndex }) => (page-1)*limit + rowIndex + 1} />
-            <Column label="Company" dataKey="companyName" width={200} cellRenderer={({ cellData }) => <a href={`https://${cellData}`} target="_blank" rel="noopener noreferrer">{cellData}</a>} />
-            <Column label="Project" dataKey="projectName" width={150} />
-            <Column label="Emp ID" dataKey="empId" width={100} />
-            <Column label="Date" dataKey="createdAt" width={120} cellRenderer={({ cellData }) => cellData ? new Date(cellData).toLocaleDateString() : "—"} />
-            <Column label="Status" dataKey="status" width={150} cellRenderer={({ rowData }) => (
-              <>
-                <button onClick={() => onToggle(rowData.companyName)} disabled={rowData.status!=='Active'}>Add</button>
-                {isAdmin && <button onClick={() => onDelete(rowData.companyName)}>Delete</button>}
-              </>
-            )} />
-          </Table>
-        )}
-      </AutoSizer>
+    <div className="overflow-x-auto bg-white border rounded shadow-sm">
+      <table className="w-full text-sm">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="p-3 text-left">#</th>
+            <th className="p-3 text-left">Company</th>
+            <th className="p-3 text-left">Project</th>
+            <th className="p-3 text-left">Emp ID</th>
+            <th className="p-3 text-left">Date</th>
+            <th className="p-3 text-center">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, idx) => {
+            const isActive = r.status === "Active";
+
+            return (
+              <tr key={r._id || idx} className="border-t hover:bg-gray-50">
+                <td className="p-3">{(page - 1) * limit + idx + 1}</td>
+                <td className="p-3">
+                  <a
+                    href={`https://${r.companyName}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    {r.companyName}
+                  </a>
+                </td>
+                <td className="p-3">{r.projectName || "—"}</td>
+                <td className="p-3">{r.empId}</td>
+                <td className="p-3">{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "—"}</td>
+                <td className="p-3 text-center space-x-2">
+                  <button
+                    onClick={() => onToggle(r.companyName)}
+                    disabled={!isActive} // deactivate only active ones
+                    className={`px-3 py-1 rounded text-white ${
+                      isActive ? "bg-yellow-500 hover:bg-yellow-600" : "bg-gray-300 cursor-not-allowed"
+                    }`}
+                  >
+                    {!isActive ? "Existing" : " Add "}
+                  </button>
+
+                  {isAdmin && (
+                    <button
+                      onClick={() => onDelete(r.companyName)}
+                      className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
+
+export default memo(CompanyTable);
