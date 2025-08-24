@@ -1,6 +1,6 @@
 import { Column, Table, AutoSizer } from "react-virtualized";
 
-function CompanyTable({ rows, page, limit, isAdmin, onToggle, onDelete }) {
+export default function CompanyTable({ rows, page, limit, isAdmin, onToggle, onDelete }) {
   return (
     <div style={{ height: 500 }}>
       <AutoSizer>
