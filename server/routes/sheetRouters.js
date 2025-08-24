@@ -30,6 +30,26 @@ router.get("/list", async (req, res) => {
   }
 });
 
+//search 
+router.get("/search", async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q) return res.json([]);
+
+    const all = await getRows();
+    const matches = all.filter(r =>
+      r.companyName?.toLowerCase().includes(q.toLowerCase())
+    );
+
+    // limit results so UI doesn’t get flooded
+    res.json(matches.slice(0, 10));
+  } catch (err) {
+    console.error("GET /search error:", err);
+    res.status(500).json({ error: "Search failed" });
+  }
+});
+
+
 // CREATE
 router.post("/creat", async (req, res) => {
   try {
