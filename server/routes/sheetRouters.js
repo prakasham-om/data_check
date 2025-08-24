@@ -42,7 +42,7 @@ router.get("/list", async (req, res) => {
     res.json({ data: filtered.slice(start, end), total });
   } catch (err) {
     console.error("GET /list error:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: "Server error",message:err });
   }
 });
 
