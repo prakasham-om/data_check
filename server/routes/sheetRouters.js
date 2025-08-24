@@ -113,7 +113,7 @@ router.post("/toggle/:companyName", async (req, res) => {
 // -------------------- DELETE --------------------
 router.delete("/delete", async (req, res) => {
   try {
-    const { companyName } = req.body;
+    const { companyName } = req.body.companyName;
     if (!companyName) return res.status(400).json({ error: "Missing companyName" });
 
     const rows = await getRows();
