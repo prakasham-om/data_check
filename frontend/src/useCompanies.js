@@ -10,6 +10,7 @@ export function useCompanies({ filter, searchQuery, dateFrom, dateTo, zeroFilter
 
   const abortRef = useRef(null);
 
+  // Fetch rows
   const fetchRows = useCallback(async () => {
     setLoading(true);
     if (abortRef.current) abortRef.current.abort();
@@ -25,9 +26,7 @@ export function useCompanies({ filter, searchQuery, dateFrom, dateTo, zeroFilter
       };
       const res = await axios.get(`${API_BASE}/list`, { params, signal: abortRef.current.signal });
       let data = res.data?.data || [];
-      if (zeroFilterActive) {
-        data = data.filter((r) => r.status === "Active" && Number(r.activeValue) === 0);
-      }
+      if (zeroFilterActive) data = data.filter((r) => r.status === "Active" && Number(r.activeValue) === 0);
       setRows(data);
       setTotal(res.data?.total || 0);
     } catch (err) {
@@ -37,7 +36,37 @@ export function useCompanies({ filter, searchQuery, dateFrom, dateTo, zeroFilter
     }
   }, [page, limit, filter, searchQuery, dateFrom, dateTo, zeroFilterActive]);
 
+  // Toggle Active/Inactive
+  const toggleCompany = useCallback(async (companyName, currentStatus) => {
+    if (currentStatus !== "Active") return; // only active can be deactivated
+    try {
+      const res = await axios.post(`${API_BASE}/toggle`, { companyName });
+      if (res.data?.success) {
+        setRows((prev) =>
+          prev.map((r) =>
+            r.companyName === companyName ? { ...r, status: "Inactive" } : r
+          )
+        );
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
+  // Delete Company (admin only)
+  const deleteCompany = useCallback(async (companyName) => {
+    try {
+      const res = await axios.delete(`${API_BASE}/delete`, { data: { companyName } });
+      if (res.data?.success) {
+        setRows((prev) => prev.filter((r) => r.companyName !== companyName));
+        setTotal((prev) => prev - 1);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
   useEffect(() => { fetchRows(); }, [fetchRows]);
 
-  return { rows, total, loading, fetchRows };
+  return { rows, total, loading, fetchRows, toggleCompany, deleteCompany };
 }
