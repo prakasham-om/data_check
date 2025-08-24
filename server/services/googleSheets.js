@@ -149,7 +149,7 @@ async function deleteRow(rowIdentifier) {
   if (!sheet) throw new Error("Sheet not found: " + rowIdentifier.sheetName);
 
   await sheets.spreadsheets.batchUpdate({
-    spreadsheetId: SPREADSHEET_ID,
+    spreadsheetId: SPREADSHEET_ID, // <-- fixed
     requestBody: {
       requests: [
         {
@@ -168,6 +168,7 @@ async function deleteRow(rowIdentifier) {
 
   return { success: true, message: `Row ${rowIdentifier.rowId} deleted` };
 }
+
 
 // Clear a sheet
 async function clearSheet(sheetName) {
