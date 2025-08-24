@@ -68,7 +68,7 @@ export default function CompanyForm({ onAdd }) {
     setLoading(true);
     try {
       // NOTE: backend route should be /create
-      const res = await axios.post(`${API_BASE}/create`, {
+      const res = await axios.post(`${API_BASE}/creat`, {
         companyName: trimmedCompany,
         projectName: trimmedProject || "",
         status,
