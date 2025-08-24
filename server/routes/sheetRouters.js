@@ -31,7 +31,7 @@ router.get("/list", async (req, res) => {
 });
 
 // CREATE
-router.post("/create", async (req, res) => {
+router.post("/creat", async (req, res) => {
   try {
     const { companyName, projectName, status = "Active", empId, activeValue = "" } = req.body;
     if (!companyName || !empId) return res.status(400).json({ error: "Missing fields" });
