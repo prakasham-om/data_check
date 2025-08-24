@@ -1,9 +1,11 @@
-import React, { useState, useMemo } from "react";
-import CompanyForm from "./components/CompanyForm";
+// App.jsx
+import React, { useState, useCallback, lazy, Suspense } from "react";
 import CompanyTable from "./components/CompanyTable";
 import ExportButtons from "./components/ExportButtons";
 import Pagination from "./components/Pagination";
 import { useCompanies } from "./useCompanies";
+
+const CompanyForm = lazy(() => import("./components/CompanyForm")); // lazy load
 
 export default function App() {
   const [filters, setFilters] = useState({
@@ -32,18 +34,36 @@ export default function App() {
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
-  // Memoized callbacks to avoid unnecessary re-renders
-  const handleSearchChange = (e) => setFilters(prev => ({ ...prev, searchQuery: e.target.value, page: 1 }));
-  const handleDateFromChange = (e) => setFilters(prev => ({ ...prev, dateFrom: e.target.value, page: 1 }));
-  const handleDateToChange = (e) => setFilters(prev => ({ ...prev, dateTo: e.target.value, page: 1 }));
-  const handleZeroToggle = () => setFilters(prev => ({ ...prev, zeroFilterActive: !prev.zeroFilterActive, page: 1 }));
-  const handlePageChange = (page) => setFilters(prev => ({ ...prev, page }));
+  // Stable handlers
+  const handleSearchChange = useCallback(
+    (e) => setFilters((prev) => ({ ...prev, searchQuery: e.target.value, page: 1 })),
+    []
+  );
+  const handleDateFromChange = useCallback(
+    (e) => setFilters((prev) => ({ ...prev, dateFrom: e.target.value, page: 1 })),
+    []
+  );
+  const handleDateToChange = useCallback(
+    (e) => setFilters((prev) => ({ ...prev, dateTo: e.target.value, page: 1 })),
+    []
+  );
+  const handleZeroToggle = useCallback(
+    () => setFilters((prev) => ({ ...prev, zeroFilterActive: !prev.zeroFilterActive, page: 1 })),
+    []
+  );
+  const handlePageChange = useCallback(
+    (page) => setFilters((prev) => ({ ...prev, page })),
+    []
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 space-y-4">
       <h1 className="text-3xl font-bold text-center">Company Project Tracker</h1>
 
-      <CompanyForm onAdd={() => {}} />
+      {/* Lazy-loaded form */}
+      <Suspense fallback={<div>Loading form...</div>}>
+        <CompanyForm onAdd={() => {}} />
+      </Suspense>
 
       {/* Filters */}
       <div className="flex gap-2 items-center flex-wrap">
@@ -67,7 +87,9 @@ export default function App() {
           className="border p-2 rounded"
         />
         <button
-          className={`px-3 py-1 rounded ${filters.zeroFilterActive ? "bg-blue-500 text-white" : "bg-gray-200"}`}
+          className={`px-3 py-1 rounded ${
+            filters.zeroFilterActive ? "bg-blue-500 text-white" : "bg-gray-200"
+          }`}
           onClick={handleZeroToggle}
         >
           Zero Approach
@@ -92,7 +114,11 @@ export default function App() {
       />
 
       {/* Pagination */}
-      <Pagination page={filters.page} totalPages={totalPages} onChange={handlePageChange} />
+      <Pagination
+        page={filters.page}
+        totalPages={totalPages}
+        onChange={handlePageChange}
+      />
     </div>
   );
 }
