@@ -27,12 +27,12 @@ function CompanyTable({ rows, loading, page, limit, isAdmin, onToggle, onDelete 
                 <td className="p-3">{(page - 1) * limit + idx + 1}</td>
                 <td className="p-3"> 
                   <a
-                      href={`https://${item.companyName}`}
+                      href={`https://${r.companyName}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:underline"
                     >
-                      {item.companyName}
+                      {r.companyName}
                     </a>
                 </td>
                 <td className="p-3">{r.projectName || "—"}</td>
