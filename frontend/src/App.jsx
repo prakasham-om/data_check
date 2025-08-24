@@ -18,7 +18,7 @@ export default function App() {
   const allowedEmpIds = ["prakash", "Prakash", "8910"];
   const isAdmin = allowedEmpIds.includes(loggedInEmpId);
 
-  const { rows, total, loading, fetchRows } = useCompanies({
+  const { rows, total, loading, fetchRows, toggleCompany, deleteCompany } = useCompanies({
     filter,
     searchQuery,
     dateFrom,
@@ -34,16 +34,27 @@ export default function App() {
     <div className="min-h-screen bg-gray-50 p-4 space-y-4">
       <h1 className="text-3xl font-bold text-center">Company Project Tracker</h1>
 
-      <CompanyForm onAdd={fetchRows} />
-
       <div className="flex gap-2 items-center">
         <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search..." className="border p-2 rounded" />
         <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="border p-2 rounded" />
         <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="border p-2 rounded" />
+        <button onClick={() => setZeroFilterActive((prev) => !prev)} className="px-3 py-1 bg-blue-500 text-white rounded">
+          {zeroFilterActive ? "Show All" : "Zero Approach"}
+        </button>
         <ExportButtons filter={filter} searchQuery={searchQuery} dateFrom={dateFrom} dateTo={dateTo} />
       </div>
 
-      <CompanyTable rows={rows} loading={loading} page={page} limit={limit} isAdmin={isAdmin} onToggle={() => fetchRows()} onDelete={() => fetchRows()} />
+      <CompanyForm onAdd={fetchRows} />
+
+      <CompanyTable
+        rows={rows}
+        loading={loading}
+        page={page}
+        limit={limit}
+        isAdmin={isAdmin}
+        onToggle={toggleCompany}
+        onDelete={deleteCompany}
+      />
 
       <Pagination page={page} totalPages={totalPages} onChange={setPage} />
     </div>
