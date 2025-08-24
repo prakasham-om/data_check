@@ -113,12 +113,12 @@ router.post("/toggle/:companyName", async (req, res) => {
 // -------------------- DELETE --------------------
 router.delete("/delete", async (req, res) => {
   try {
-    const { companyName, projectName } = req.body;
+    const { companyName } = req.body;
     if (!companyName) return res.status(400).json({ error: "Missing companyName" });
 
     const rows = await getRows();
     const row = rows.find(
-      (r) => r.companyName === companyName && (!projectName || r.projectName === projectName)
+      (r) => r.companyName === companyName 
     );
     if (!row) return res.status(404).json({ error: "Company not found" });
 
