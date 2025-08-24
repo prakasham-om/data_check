@@ -1,9 +1,8 @@
-// services/googleSheets.js
 const { google } = require("googleapis");
 require("dotenv").config();
 
 const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
-const MAX_ROWS_PER_SHEET = 50000; // storage per sheet in Google Sheets (your append logic)
+const MAX_ROWS_PER_SHEET = 50000;
 
 const cred = JSON.parse(Buffer.from(process.env.CRED, "base64").toString("utf8"));
 const auth = new google.auth.GoogleAuth({
@@ -26,18 +25,31 @@ async function getSheetList() {
   }));
 }
 
-// Append rows (your same logic)
+// Append rows, create new sheet if full
 async function appendRows(values) {
   const sheets = await getSheetsClient();
   let sheetList = await getSheetList();
   let targetSheet = sheetList[sheetList.length - 1];
 
+  // Create sheet if none exists
+  if (!targetSheet) {
+    const newSheetTitle = "Sheet1";
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      requestBody: { requests: [{ addSheet: { properties: { title: newSheetTitle } } }] },
+    });
+    targetSheet = { title: newSheetTitle };
+    sheetList.push(targetSheet);
+  }
+
+  // Get current rows
   const currentResp = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
     range: targetSheet.title,
   });
   const currentRows = currentResp.data.values?.length || 0;
 
+  // Create new sheet if full
   if (currentRows + values.length > MAX_ROWS_PER_SHEET) {
     const newSheetTitle = `Sheet${sheetList.length + 1}`;
     await sheets.spreadsheets.batchUpdate({
@@ -45,10 +57,19 @@ async function appendRows(values) {
       requestBody: { requests: [{ addSheet: { properties: { title: newSheetTitle } } }] },
     });
     targetSheet.title = newSheetTitle;
+
+    // Optional: add headers
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${newSheetTitle}!A1:F1`,
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [["Company", "Project", "Status", "EmpId", "CreatedAt", "ActiveValue"]] },
+    });
     console.log(`Created new sheet: ${newSheetTitle}`);
   }
 
-  const response = await sheets.spreadsheets.values.append({
+  // Append rows
+  await sheets.spreadsheets.values.append({
     spreadsheetId: SPREADSHEET_ID,
     range: targetSheet.title,
     valueInputOption: "USER_ENTERED",
@@ -56,16 +77,10 @@ async function appendRows(values) {
     requestBody: { values },
   });
 
-  return {
-    success: true,
-    message: `Rows appended to ${targetSheet.title}`,
-    sheetName: targetSheet.title,
-    startRow: currentRows + 1,
-    endRow: currentRows + values.length,
-  };
+  return { success: true, message: `Rows appended to ${targetSheet.title}`, sheetName: targetSheet.title, startRow: currentRows, endRow: currentRows + values.length };
 }
 
-// Read all rows (A:F expected: company, project, status, empId, createdAt, activeValue)
+// Get all rows
 async function getRows() {
   const sheets = await getSheetsClient();
   const sheetList = await getSheetList();
@@ -77,12 +92,12 @@ async function getRows() {
       range: sheet.title,
     });
     const rows = resp.data.values || [];
-    // assuming first row is header
-    for (let i = 1; i < rows.length; i++) {
+
+    for (let i = 0; i < rows.length; i++) { // start at 0, treat every row as data
       const r = rows[i] || [];
       all.push({
         sheetName: sheet.title,
-        rowId: i, // 0-based for deleteDimension
+        rowId: i,
         companyName: r[0] || "",
         projectName: r[1] || "",
         status: r[2] || "",
@@ -95,6 +110,7 @@ async function getRows() {
   return all;
 }
 
+// Update a row
 async function updateRow(rowIdentifier, values) {
   const sheets = await getSheetsClient();
   const range = `${rowIdentifier.sheetName}!A${rowIdentifier.rowId + 1}:F${rowIdentifier.rowId + 1}`;
@@ -107,6 +123,7 @@ async function updateRow(rowIdentifier, values) {
   return { success: true, message: `Row ${rowIdentifier.rowId} updated` };
 }
 
+// Delete a row
 async function deleteRow(rowIdentifier) {
   const sheets = await getSheetsClient();
   const sheetList = await getSheetList();
@@ -114,7 +131,7 @@ async function deleteRow(rowIdentifier) {
   if (!sheet) throw new Error("Sheet not found: " + rowIdentifier.sheetName);
 
   await sheets.spreadsheets.batchUpdate({
-    spreadsheetId: SPREADSHEET_ID,
+    spreadsheetId,
     requestBody: {
       requests: [
         {
@@ -133,6 +150,7 @@ async function deleteRow(rowIdentifier) {
   return { success: true, message: `Row ${rowIdentifier.rowId} deleted` };
 }
 
+// Clear sheet
 async function clearSheet(sheetName) {
   const sheets = await getSheetsClient();
   await sheets.spreadsheets.values.clear({
@@ -142,11 +160,4 @@ async function clearSheet(sheetName) {
   return { success: true, message: `Sheet ${sheetName} cleared` };
 }
 
-module.exports = {
-  appendRows,
-  getRows,
-  updateRow,
-  deleteRow,
-  clearSheet,
-  getSheetList,
-};
+module.exports = { appendRows, getRows, updateRow, deleteRow, clearSheet, getSheetList };
