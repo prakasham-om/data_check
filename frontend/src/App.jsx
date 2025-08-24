@@ -1,102 +1,51 @@
-import React, { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import React, { useState } from "react";
 import CompanyForm from "./components/CompanyForm";
 import CompanyTable from "./components/CompanyTable";
-
-const API_BASE = "https://data-check.onrender.com/api/sheet";
+import ExportButtons from "./components/ExportButtons";
+import Pagination from "./components/Pagination";
+import { useCompanies } from "./useCompanies";
 
 export default function App() {
-  const [rows, setRows] = useState([]);
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(false);
-  const debounceRef = useRef(null);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [zeroFilterActive, setZeroFilterActive] = useState(false);
+  const [page, setPage] = useState(1);
+  const limit = 20;
 
-  const fetchList = async (statusFilter = filter, search = "") => {
-    setLoading(true);
-    try {
-      const params = { page: 1, limit: 1000 };
-      if (statusFilter === "active") params.status = "Active";
-      const res = await axios.get(`${API_BASE}/list`, { params });
-      let data = res.data.data || [];
-      if (search) {
-        data = data.filter((d) =>
-          d.companyName.toLowerCase().includes(search.toLowerCase())
-        );
-      }
-      setRows(data);
-    } catch (err) {
-      alert("Failed to fetch data");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loggedInEmpId = localStorage.getItem("empId");
+  const allowedEmpIds = ["prakash", "Prakash", "8910"];
+  const isAdmin = allowedEmpIds.includes(loggedInEmpId);
 
-  useEffect(() => {
-    fetchList(filter, searchQuery);
-  }, [filter]);
+  const { rows, total, loading, fetchRows } = useCompanies({
+    filter,
+    searchQuery,
+    dateFrom,
+    dateTo,
+    zeroFilterActive,
+    page,
+    limit,
+  });
 
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      fetchList(filter, searchQuery);
-    }, 400);
-  }, [searchQuery]);
+  const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-900 p-4">
-      {/* Header */}
-      <h1 className="text-3xl font-extrabold mb-4 text-center text-gray-800">
-        Company Project Tracker
-      </h1>
+    <div className="min-h-screen bg-gray-50 p-4 space-y-4">
+      <h1 className="text-3xl font-bold text-center">Company Project Tracker</h1>
 
-      {/* Form Section */}
-      <div className="w-full bg-white rounded-xl shadow-md p-4 mb-4">
-        <CompanyForm onAdd={() => fetchList(filter, searchQuery)} />
+      <CompanyForm onAdd={fetchRows} />
+
+      <div className="flex gap-2 items-center">
+        <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search..." className="border p-2 rounded" />
+        <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="border p-2 rounded" />
+        <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="border p-2 rounded" />
+        <ExportButtons filter={filter} searchQuery={searchQuery} dateFrom={dateFrom} dateTo={dateTo} />
       </div>
 
-      {/* Filters & Search */}
-{/*       <div className="w-full flex flex-wrap items-center gap-2 mb-4">
-        {["all", "active"].map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
-              filter === f
-                ? "bg-blue-600 text-white shadow-sm"
-                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-            }`}
-          >
-            {f.charAt(0).toUpperCase() + f.slice(1)}
-          </button>
-        ))}
-        <input
-          type="text"
-          placeholder="Search company..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="ml-auto border border-gray-300 px-3 py-1 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
-        />
-      </div>
- */}
-      {/* Tables */}
-      <div className="w-full space-y-3">
-        {loading && <p className="text-center text-gray-500 text-sm">Loading...</p>}
+      <CompanyTable rows={rows} loading={loading} page={page} limit={limit} isAdmin={isAdmin} onToggle={() => fetchRows()} onDelete={() => fetchRows()} />
 
-        {!loading &&
-          (filter === "active"
-            ? [...new Set(rows.map((r) => r.projectName))].map((project) => (
-                <div key={project} className="bg-white rounded-xl shadow p-3">
-                  <h2 className="font-semibold text-lg mb-2 border-b pb-1">
-                    {project}
-                  </h2>
-                  <CompanyTable rows={rows.filter((r) => r.projectName === project)} />
-                </div>
-              ))
-            : <div className="bg-white rounded-xl shadow p-3">
-                <CompanyTable rows={rows} />
-              </div>)}
-      </div>
+      <Pagination page={page} totalPages={totalPages} onChange={setPage} />
     </div>
   );
 }
