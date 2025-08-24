@@ -100,7 +100,7 @@ router.post("/toggle/:companyName", async (req, res) => {
       "Inactive",
       row.empId,
       row.createdAt,
-      row.activeValue ?? "",
+      "",
     ]);
 
     res.json({ success: true, message: "Status changed to inactive" });
