@@ -1,20 +1,24 @@
+// services/googleSheets.js
 const { google } = require("googleapis");
 require("dotenv").config();
 
 const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
 const MAX_ROWS_PER_SHEET = 50000;
 
+// Decode credentials from base64
 const cred = JSON.parse(Buffer.from(process.env.CRED, "base64").toString("utf8"));
 const auth = new google.auth.GoogleAuth({
   credentials: cred,
   scopes: ["https://www.googleapis.com/auth/spreadsheets"],
 });
 
+// Get sheets client
 async function getSheetsClient() {
   const authClient = await auth.getClient();
   return google.sheets({ version: "v4", auth: authClient });
 }
 
+// Get all sheet metadata
 async function getSheetList() {
   const sheets = await getSheetsClient();
   const meta = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
@@ -25,7 +29,7 @@ async function getSheetList() {
   }));
 }
 
-// Append rows, create new sheet if full
+// Append rows with auto sheet creation & headers
 async function appendRows(values) {
   const sheets = await getSheetsClient();
   let sheetList = await getSheetList();
@@ -40,6 +44,14 @@ async function appendRows(values) {
     });
     targetSheet = { title: newSheetTitle };
     sheetList.push(targetSheet);
+
+    // Add header
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${newSheetTitle}!A1:F1`,
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [["Company", "Project", "Status", "EmpId", "CreatedAt", "ActiveValue"]] },
+    });
   }
 
   // Get current rows
@@ -58,29 +70,34 @@ async function appendRows(values) {
     });
     targetSheet.title = newSheetTitle;
 
-    // Optional: add headers
+    // Add header
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
       range: `${newSheetTitle}!A1:F1`,
       valueInputOption: "USER_ENTERED",
       requestBody: { values: [["Company", "Project", "Status", "EmpId", "CreatedAt", "ActiveValue"]] },
     });
-    console.log(`Created new sheet: ${newSheetTitle}`);
   }
 
-  // Append rows
+  // Append rows after header
   await sheets.spreadsheets.values.append({
     spreadsheetId: SPREADSHEET_ID,
-    range: targetSheet.title,
+    range: `${targetSheet.title}!A2`,
     valueInputOption: "USER_ENTERED",
     insertDataOption: "INSERT_ROWS",
     requestBody: { values },
   });
 
-  return { success: true, message: `Rows appended to ${targetSheet.title}`, sheetName: targetSheet.title, startRow: currentRows, endRow: currentRows + values.length };
+  return {
+    success: true,
+    message: `Rows appended to ${targetSheet.title}`,
+    sheetName: targetSheet.title,
+    startRow: currentRows + 1, // index after header
+    endRow: currentRows + values.length,
+  };
 }
 
-// Get all rows
+// Get all rows (skip header)
 async function getRows() {
   const sheets = await getSheetsClient();
   const sheetList = await getSheetList();
@@ -93,7 +110,8 @@ async function getRows() {
     });
     const rows = resp.data.values || [];
 
-    for (let i = 0; i < rows.length; i++) { // start at 0, treat every row as data
+    // Skip header row
+    for (let i = 1; i < rows.length; i++) {
       const r = rows[i] || [];
       all.push({
         sheetName: sheet.title,
@@ -131,7 +149,7 @@ async function deleteRow(rowIdentifier) {
   if (!sheet) throw new Error("Sheet not found: " + rowIdentifier.sheetName);
 
   await sheets.spreadsheets.batchUpdate({
-    spreadsheetId,
+    spreadsheetId: SPREADSHEET_ID,
     requestBody: {
       requests: [
         {
@@ -147,10 +165,11 @@ async function deleteRow(rowIdentifier) {
       ],
     },
   });
+
   return { success: true, message: `Row ${rowIdentifier.rowId} deleted` };
 }
 
-// Clear sheet
+// Clear a sheet
 async function clearSheet(sheetName) {
   const sheets = await getSheetsClient();
   await sheets.spreadsheets.values.clear({
