@@ -25,7 +25,16 @@ function CompanyTable({ rows, loading, page, limit, isAdmin, onToggle, onDelete 
             return (
               <tr key={r._id || idx} className="border-t hover:bg-gray-50">
                 <td className="p-3">{(page - 1) * limit + idx + 1}</td>
-                <td className="p-3">{r.companyName}</td>
+                <td className="p-3"> 
+                  <a
+                      href={`https://${item.companyName}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      {item.companyName}
+                    </a>
+                </td>
                 <td className="p-3">{r.projectName || "—"}</td>
                 <td className="p-3">{r.empId}</td>
                 <td className="p-3">{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "—"}</td>
