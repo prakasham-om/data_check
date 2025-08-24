@@ -45,7 +45,7 @@ function CompanyTable({ rows, loading, page, limit, isAdmin, onToggle, onDelete 
                       isActive ? "bg-yellow-500 hover:bg-yellow-600" : "bg-gray-300 cursor-not-allowed"
                     }`}
                   >
-                    {isActive ? "Existing" : " Add "}
+                    {!isActive ? "Existing" : " Add "}
                   </button>
 
                   {isAdmin && (
