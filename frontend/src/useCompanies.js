@@ -10,11 +10,11 @@ export function useCompanies({ filter, searchQuery, dateFrom, dateTo, zeroFilter
 
   const abortRef = useRef(null);
 
-  // Fetch rows
   const fetchRows = useCallback(async () => {
     setLoading(true);
     if (abortRef.current) abortRef.current.abort();
     abortRef.current = new AbortController();
+
     try {
       const params = {
         page,
@@ -24,9 +24,15 @@ export function useCompanies({ filter, searchQuery, dateFrom, dateTo, zeroFilter
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
       };
+
       const res = await axios.get(`${API_BASE}/list`, { params, signal: abortRef.current.signal });
       let data = res.data?.data || [];
-      if (zeroFilterActive) data = data.filter((r) => r.status === "Active" && Number(r.activeValue) === 0);
+
+      // Apply zeroApproach filter on client
+      if (zeroFilterActive) {
+        data = data.filter(r => r.status === "Active" && Number(r.activeValue) === 0);
+      }
+
       setRows(data);
       setTotal(res.data?.total || 0);
     } catch (err) {
@@ -36,37 +42,31 @@ export function useCompanies({ filter, searchQuery, dateFrom, dateTo, zeroFilter
     }
   }, [page, limit, filter, searchQuery, dateFrom, dateTo, zeroFilterActive]);
 
-  // Toggle Active/Inactive
-  const toggleCompany = useCallback(async (companyName, currentStatus) => {
-    if (currentStatus !== "Active") return; // only active can be deactivated
+  // Toggle status
+  const toggleStatus = useCallback(async (companyName) => {
     try {
-      const res = await axios.post(`${API_BASE}/toggle`, { companyName });
-      if (res.data?.success) {
-        setRows((prev) =>
-          prev.map((r) =>
-            r.companyName === companyName ? { ...r, status: "Inactive" } : r
-          )
-        );
-      }
+      await axios.post(`${API_BASE}/toggle/${companyName}`);
+      fetchRows(); // Refresh table after toggle
     } catch (err) {
       console.error(err);
+      alert(err.response?.data?.error || "Failed to toggle status");
     }
-  }, []);
+  }, [fetchRows]);
 
-  // Delete Company (admin only)
+  // Delete company
   const deleteCompany = useCallback(async (companyName) => {
     try {
-      const res = await axios.delete(`${API_BASE}/delete`, { data: { companyName } });
-      if (res.data?.success) {
-        setRows((prev) => prev.filter((r) => r.companyName !== companyName));
-        setTotal((prev) => prev - 1);
-      }
+      await axios.delete(`${API_BASE}/delete/${companyName}`);
+      fetchRows(); // Refresh table after deletion
     } catch (err) {
       console.error(err);
+      alert(err.response?.data?.error || "Failed to delete company");
     }
-  }, []);
+  }, [fetchRows]);
 
-  useEffect(() => { fetchRows(); }, [fetchRows]);
+  useEffect(() => {
+    fetchRows();
+  }, [fetchRows]);
 
-  return { rows, total, loading, fetchRows, toggleCompany, deleteCompany };
+  return { rows, total, loading, fetchRows, toggleStatus, deleteCompany };
 }
