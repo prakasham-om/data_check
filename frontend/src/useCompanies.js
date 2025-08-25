@@ -21,7 +21,7 @@ export function useCompanies({ filter, searchQuery, dateFrom, dateTo, zeroFilter
         page,
         limit,
         status: filter === "active" ? "Active" : undefined,
-        q: searchQuery || undefined,
+        q: searchQuery || undefined, // still send to backend
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
       };
@@ -32,6 +32,16 @@ export function useCompanies({ filter, searchQuery, dateFrom, dateTo, zeroFilter
       // zero filter applied
       if (zeroFilterActive) {
         data = data.filter(r => r.status === "Active" && Number(r.activeValue) === 0);
+      }
+
+      // 👇 local filtering for companyName, projectName, empId
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        data = data.filter(r =>
+          (r.companyName && r.companyName.toLowerCase().includes(q)) ||
+          (r.projectName && r.projectName.toLowerCase().includes(q)) ||
+          (r.empId && String(r.empId).toLowerCase().includes(q))
+        );
       }
 
       setRows(data);
@@ -80,7 +90,7 @@ export function useCompanies({ filter, searchQuery, dateFrom, dateTo, zeroFilter
     fetchRows();
   }, [fetchRows]);
 
-  // 👇 NEW: group rows by projectName
+  // Group rows by project
   const groupedByProject = rows.reduce((acc, row) => {
     const project = row.projectName || "Unknown Project";
     if (!acc[project]) acc[project] = [];
