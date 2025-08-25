@@ -45,7 +45,8 @@ export default function CompanyForm({ onAdd }) {
   }, [companyName]);
 
   const validateURL = (url) => {
-    const regex = /^(?!www\.)([a-z0-9\-]+)\.(com|com\.in)$/i;
+    const regex = /^(?!www\.)([a-z0-9-]+)\.([a-z]{2,})(\.[a-z]{2,})?$/i;
+
     return regex.test(url);
   };
 
