@@ -13,10 +13,10 @@ const { streamExcel, filterRows } = require("../services/exportExcel");
 
 // Helper: get IST ISO string
 function getISTDateISO() {
-  const now = new Date();function getISTDateISO() {
   const now = new Date();
-  // Get IST using Intl API
-  const ist = new Intl.DateTimeFormat("en-GB", {
+
+  // Format with IST timezone using Intl API
+  const istParts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Kolkata",
     year: "numeric",
     month: "2-digit",
@@ -27,12 +27,18 @@ function getISTDateISO() {
     hour12: false
   }).formatToParts(now);
 
-  // Build YYYY-MM-DDTHH:mm:ss+05:30
-  const date = `${ist.find(p => p.type === "year").value}-${ist.find(p => p.type === "month").value}-${ist.find(p => p.type === "day").value}`;
-  const time = `${ist.find(p => p.type === "hour").value}:${ist.find(p => p.type === "minute").value}:${ist.find(p => p.type === "second").value}`;
+  // Extract parts into an object
+  const dateObj = {};
+  istParts.forEach(({ type, value }) => {
+    dateObj[type] = value;
+  });
 
-  return `${date}T${time}+05:30`;
+  // Build ISO string manually (YYYY-MM-DDTHH:mm:ss)
+  return `${dateObj.year}-${dateObj.month}-${dateObj.day}T${dateObj.hour}:${dateObj.minute}:${dateObj.second}`;
 }
+
+// Example usage:
+console.log(getISTDateISO()); 
 
 
 // -------------------- LIST + FILTER + PAGINATION --------------------
