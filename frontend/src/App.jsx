@@ -14,7 +14,7 @@ export default function App() {
     dateFrom: "",
     dateTo: "",
     zeroFilterActive: false,
-    page: 1
+    page: 1,
   });
   const limit = 20;
 
@@ -29,32 +29,62 @@ export default function App() {
     dateTo: filters.dateTo,
     zeroFilterActive: filters.zeroFilterActive,
     page: filters.page,
-    limit
+    limit,
   });
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   // Stable handlers
   const handleSearchChange = useCallback(
-    (e) => setFilters((prev) => ({ ...prev, searchQuery: e.target.value, page: 1 })),
+    (e) =>
+      setFilters((prev) => ({
+        ...prev,
+        searchQuery: e.target.value,
+        page: 1,
+      })),
     []
   );
   const handleDateFromChange = useCallback(
-    (e) => setFilters((prev) => ({ ...prev, dateFrom: e.target.value, page: 1 })),
+    (e) =>
+      setFilters((prev) => ({
+        ...prev,
+        dateFrom: e.target.value,
+        page: 1,
+      })),
     []
   );
   const handleDateToChange = useCallback(
-    (e) => setFilters((prev) => ({ ...prev, dateTo: e.target.value, page: 1 })),
+    (e) =>
+      setFilters((prev) => ({
+        ...prev,
+        dateTo: e.target.value,
+        page: 1,
+      })),
     []
   );
   const handleZeroToggle = useCallback(
-    () => setFilters((prev) => ({ ...prev, zeroFilterActive: !prev.zeroFilterActive, page: 1 })),
+    () =>
+      setFilters((prev) => ({
+        ...prev,
+        zeroFilterActive: !prev.zeroFilterActive,
+        page: 1,
+      })),
     []
   );
   const handlePageChange = useCallback(
     (page) => setFilters((prev) => ({ ...prev, page })),
     []
   );
+
+  // ✅ Group rows by projectName if Zero Approach is active
+  const groupedRows = filters.zeroFilterActive
+    ? rows.reduce((acc, row) => {
+        const key = row.projectName || "Unknown Project";
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(row);
+        return acc;
+      }, {})
+    : null;
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 space-y-4">
@@ -88,7 +118,9 @@ export default function App() {
         />
         <button
           className={`px-3 py-1 rounded ${
-            filters.zeroFilterActive ? "bg-blue-500 text-white" : "bg-gray-200"
+            filters.zeroFilterActive
+              ? "bg-blue-500 text-white"
+              : "bg-gray-200"
           }`}
           onClick={handleZeroToggle}
         >
@@ -102,16 +134,35 @@ export default function App() {
         />
       </div>
 
-      {/* Table */}
-      <CompanyTable
-        rows={rows}
-        loading={loading}
-        page={filters.page}
-        limit={limit}
-        isAdmin={isAdmin}
-        onToggle={toggleStatus}
-        onDelete={deleteCompany}
-      />
+      {/* Table(s) */}
+      {filters.zeroFilterActive ? (
+        // Multiple tables grouped by project name
+        Object.entries(groupedRows).map(([projectName, projectRows]) => (
+          <div key={projectName} className="space-y-2">
+            <h2 className="text-xl font-semibold">{projectName}</h2>
+            <CompanyTable
+              rows={projectRows}
+              loading={loading}
+              page={filters.page}
+              limit={limit}
+              isAdmin={isAdmin}
+              onToggle={toggleStatus}
+              onDelete={deleteCompany}
+            />
+          </div>
+        ))
+      ) : (
+        // Single table
+        <CompanyTable
+          rows={rows}
+          loading={loading}
+          page={filters.page}
+          limit={limit}
+          isAdmin={isAdmin}
+          onToggle={toggleStatus}
+          onDelete={deleteCompany}
+        />
+      )}
 
       {/* Pagination */}
       <Pagination
