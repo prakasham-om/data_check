@@ -29,6 +29,7 @@ export function useCompanies({ filter, searchQuery, dateFrom, dateTo, zeroFilter
       const res = await axios.get(`${API_BASE}/list`, { params, signal: abortRef.current.signal });
       let data = res.data?.data || [];
 
+      // zero filter applied
       if (zeroFilterActive) {
         data = data.filter(r => r.status === "Active" && Number(r.activeValue) === 0);
       }
@@ -42,7 +43,7 @@ export function useCompanies({ filter, searchQuery, dateFrom, dateTo, zeroFilter
     }
   }, [page, limit, filter, searchQuery, dateFrom, dateTo, zeroFilterActive]);
 
-  // Toggle company status (Active ↔ Inactive)
+  // Toggle company status
   const toggleStatus = useCallback(async (companyName) => {
     try {
       await axios.post(`${API_BASE}/toggle/${encodeURIComponent(companyName)}`);
@@ -64,7 +65,7 @@ export function useCompanies({ filter, searchQuery, dateFrom, dateTo, zeroFilter
     }
   }, [fetchRows]);
 
-  // Clear last sheet
+  // Clear sheet
   const clearSheet = useCallback(async () => {
     try {
       await axios.post(`${API_BASE}/clear`);
@@ -79,5 +80,13 @@ export function useCompanies({ filter, searchQuery, dateFrom, dateTo, zeroFilter
     fetchRows();
   }, [fetchRows]);
 
-  return { rows, total, loading, fetchRows, toggleStatus, deleteCompany, clearSheet };
+  // 👇 NEW: group rows by projectName
+  const groupedByProject = rows.reduce((acc, row) => {
+    const project = row.projectName || "Unknown Project";
+    if (!acc[project]) acc[project] = [];
+    acc[project].push(row);
+    return acc;
+  }, {});
+
+  return { rows, groupedByProject, total, loading, fetchRows, toggleStatus, deleteCompany, clearSheet };
 }
