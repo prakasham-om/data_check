@@ -45,11 +45,8 @@ export default function CompanyForm({ onAdd }) {
   }, [companyName]);
 
   const validateURL = (url) => {
-       const regex=/^(?!www\.)([a-z0-9-]{1,63})\.([a-z]{2,63})(?:\.([a-z]{2,63}))?$/i
-
-
-
-    return regex.test(url);
+      const regex = /^(?!www\.)([a-z0-9-]{1,63})\.([a-z]{2,63})(?:\.[a-z]{2,63})?$/i;
+      return regex.test(url);
   };
 
   const handleSubmit = async (e) => {
