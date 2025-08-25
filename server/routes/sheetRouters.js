@@ -13,10 +13,27 @@ const { streamExcel, filterRows } = require("../services/exportExcel");
 
 // Helper: get IST ISO string
 function getISTDateISO() {
+  const now = new Date();function getISTDateISO() {
   const now = new Date();
-  const istOffsetMs = 5.5 * 60 * 60 * 1000;
-  return new Date(now.getTime() + istOffsetMs).toISOString();
+  // Get IST using Intl API
+  const ist = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  }).formatToParts(now);
+
+  // Build YYYY-MM-DDTHH:mm:ss+05:30
+  const date = `${ist.find(p => p.type === "year").value}-${ist.find(p => p.type === "month").value}-${ist.find(p => p.type === "day").value}`;
+  const time = `${ist.find(p => p.type === "hour").value}:${ist.find(p => p.type === "minute").value}:${ist.find(p => p.type === "second").value}`;
+
+  return `${date}T${time}+05:30`;
 }
+
 
 // -------------------- LIST + FILTER + PAGINATION --------------------
 router.get("/list", async (req, res) => {
